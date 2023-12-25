@@ -17,6 +17,14 @@ typedef uint64_t u64;
 
 #define BETWEEN(a, b, c) ((a >= b) && (a <= c))
 
+#define NO_IMPL(...)                                                         \
+    do                                                                       \
+    {                                                                        \
+        fprintf(stderr, "NOT YET IMPLEMENTED: %s:%d\n", __FILE__, __LINE__); \
+        abort();                                                             \
+    } while (0);                                                             \
+    return __VA_ARGS__
+
 #ifdef __cplusplus
 extern "C"
 {

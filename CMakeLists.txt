@@ -23,9 +23,10 @@ find_package(SDL2_ttf CONFIG REQUIRED)
 # Add core library
 add_library(gaboem_core STATIC
     lib/bus.c
-    lib/cpu.c
     lib/cart.c
+    lib/cpu.c
     lib/emu.c
+    lib/instruction.c
     lib/ppu.c
     lib/timer.c
 )

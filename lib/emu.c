@@ -64,3 +64,8 @@ int emu_run(int argc, char **argv)
 
     return 0;
 }
+
+void emu_cycles(u64 cycles)
+{
+    // TODO: Implement
+}

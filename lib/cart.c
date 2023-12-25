@@ -165,3 +165,13 @@ bool cart_load(const char *cart)
 
     return true;
 }
+
+u8 cart_read(u16 address)
+{
+    return ctx.rom_data[address];
+}
+
+void cart_write(u16 address, u8 value)
+{
+    NO_IMPL();
+}
