@@ -44,18 +44,16 @@ void cpu_init(void)
     ctx.regs.l = 0x4D;
     ctx.regs.sp = 0xFFFE;
     ctx.regs.pc = 0x0100;
+
+    ctx.halted = false;
+    ctx.stepping = false;
+    ctx.interrupts_enabled = true;
 }
 
 static void fetch_instruction(void)
 {
     ctx.current_opcode = bus_read(ctx.regs.pc++);
     ctx.current_instruction = instruction_by_opcode(ctx.current_opcode);
-
-    if (ctx.current_instruction == NULL)
-    {
-        printf("Unknown instruction: 0x%02X\n", ctx.current_opcode);
-        abort();
-    }
 }
 
 static void fetch_data(void)
@@ -63,9 +61,12 @@ static void fetch_data(void)
     ctx.mem_dest = 0;
     ctx.dest_is_mem = false;
 
+    if (ctx.current_instruction == NULL)
+        return;
+
     switch (ctx.current_instruction->mode)
     {
-    case AM_IMP:
+    case AM_NONE:
         return;
 
     case AM_R:
@@ -100,7 +101,10 @@ static void fetch_data(void)
 
 static void execute(void)
 {
-    printf("\tNot executing yet...\n");
+    IN_PROC proc = inst_get_processor(ctx.current_instruction->type);
+    if (proc == NULL)
+        NO_IMPL();
+    proc(&ctx);
 }
 
 bool cpu_step(void)
@@ -112,10 +116,28 @@ bool cpu_step(void)
         fetch_instruction();
         fetch_data();
 
-        printf("Executing Instruction: %02X     PC: %04X\n", ctx.current_opcode, pc);
+        printf("%04X: %-7s (%02X %02X %02X %02X) A: %02X F: %02X B: %02X C: %02X D: %02X E: %02X H: %02X L: %02X\n", pc, instruction_name(ctx.current_instruction), ctx.current_opcode, bus_read(pc + 1), bus_read(pc + 2), bus_read(pc + 3), ctx.regs.a, ctx.regs.f, ctx.regs.b, ctx.regs.c, ctx.regs.d, ctx.regs.e, ctx.regs.h, ctx.regs.l);
+
+        if (ctx.current_instruction == NULL)
+        {
+            printf("Unknown instruction: 0x%02X\n", ctx.current_opcode);
+            exit(84);
+        }
 
         execute();
     }
 
     return true;
+}
+
+void cpu_set_flags(u8 z, u8 n, u8 h, u8 c)
+{
+    if (z != 0xff)
+        BIT_SET(ctx.regs.f, 7, z);
+    if (n != 0xff)
+        BIT_SET(ctx.regs.f, 6, n);
+    if (h != 0xff)
+        BIT_SET(ctx.regs.f, 5, h);
+    if (c != 0xff)
+        BIT_SET(ctx.regs.f, 4, c);
 }

@@ -21,7 +21,11 @@ typedef struct
 
     bool halted;
     bool stepping;
+
+    bool interrupts_enabled;
 } cpu_context;
+
+typedef void (*IN_PROC)(cpu_context *);
 
 #ifdef __cplusplus
 extern "C"
@@ -31,6 +35,15 @@ extern "C"
     void cpu_init(void);
     bool cpu_step(void);
 
+    void cpu_set_flags(u8 z, u8 n, u8 h, u8 c);
+
+    IN_PROC inst_get_processor(in_type type);
+
 #ifdef __cplusplus
 }
 #endif
+
+#define CPU_FLAG_Z(ctx) BIT(ctx->regs.f, 7)
+#define CPU_FLAG_N(ctx) BIT(ctx->regs.f, 6)
+#define CPU_FLAG_H(ctx) BIT(ctx->regs.f, 5)
+#define CPU_FLAG_C(ctx) BIT(ctx->regs.f, 4)

@@ -4,6 +4,7 @@
 
 typedef enum
 {
+    AM_NONE,
     AM_R_D16, // 16-bit immediate to register
     AM_R_R,   // Register to register
     AM_MR_R,  // Register to memory
@@ -19,7 +20,6 @@ typedef enum
     AM_HL_SPR,
     AM_D16,
     AM_D8,
-    AM_IMP, // Implied
     AM_D16_R,
     AM_MR_D8,
     AM_MR,
@@ -123,6 +123,7 @@ extern "C"
 #endif
 
     instruction *instruction_by_opcode(u8 opcode);
+    const char *instruction_name(instruction *);
 
 #ifdef __cplusplus
 }
