@@ -2,11 +2,20 @@
 	"version": 3,
 	"configurePresets": [
 		{
-			"name": "default",
-			"binaryDir": "${sourceDir}/build",
+			"name": "makefile",
+			"binaryDir": "${sourceDir}/build/makefile",
 			"cacheVariables": {
 				"CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
-			}
+			},
+			"generator": "Unix Makefiles"
+		},
+		{
+			"name": "xcode",
+			"binaryDir": "${sourceDir}/build/xcode",
+			"cacheVariables": {
+				"CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+			},
+			"generator": "Xcode"
 		}
 	]
 }
