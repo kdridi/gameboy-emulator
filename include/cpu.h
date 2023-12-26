@@ -49,6 +49,8 @@ extern "C"
 
     IN_PROC inst_get_processor(in_type type);
 
+    cpu_registers *cpu_get_registers(void);
+
 #ifdef __cplusplus
 }
 #endif

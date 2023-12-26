@@ -1,6 +1,7 @@
 #include <cpu.h>
 #include <emu.h>
 #include <bus.h>
+#include <stack.h>
 
 static void proc_none(cpu_context *ctx)
 {
@@ -90,13 +91,78 @@ static bool check_cond(cpu_context *ctx)
     return false;
 }
 
-static void proc_jp(cpu_context *ctx)
+static void proc_pop(cpu_context *ctx)
+{
+    u16 value = stack_pop16();
+    emu_cycles(2);
+
+    if (ctx->current_instruction->reg_1 == RT_AF)
+        value &= 0xFFF0;
+
+    cpu_write_reg(ctx->current_instruction->reg_1, value);
+}
+
+static void proc_push(cpu_context *ctx)
+{
+    u16 value = cpu_read_reg(ctx->current_instruction->reg_1);
+    stack_push16(value);
+    emu_cycles(2);
+}
+
+static void goto_addr(cpu_context *ctx, u16 addr, bool pushpc, bool poppc)
 {
     if (check_cond(ctx))
     {
-        ctx->regs.pc = ctx->fetched_data;
+        if (pushpc)
+        {
+            stack_push16(ctx->regs.pc);
+            emu_cycles(2);
+        }
+
+        if (poppc)
+        {
+            addr = stack_pop16();
+            emu_cycles(2);
+        }
+
+        ctx->regs.pc = addr;
         emu_cycles(1);
     }
+}
+
+static void proc_jp(cpu_context *ctx)
+{
+    goto_addr(ctx, ctx->fetched_data, false, false);
+}
+
+static void proc_jr(cpu_context *ctx)
+{
+    char rel = (char)(ctx->fetched_data & 0xFF);
+    u16 addr = ctx->regs.pc + rel;
+    goto_addr(ctx, addr, false, false);
+}
+
+static void proc_call(cpu_context *ctx)
+{
+    goto_addr(ctx, ctx->fetched_data, true, false);
+}
+
+static void proc_rst(cpu_context *ctx)
+{
+    goto_addr(ctx, ctx->current_instruction->param, true, false);
+}
+
+static void proc_ret(cpu_context *ctx)
+{
+    if (ctx->current_instruction->cond != CT_NONE)
+        emu_cycles(1);
+    goto_addr(ctx, 0, false, true);
+}
+
+static void proc_reti(cpu_context *ctx)
+{
+    ctx->interrupts_enabled = true;
+    proc_ret(ctx);
 }
 
 IN_PROC processors[] = {
@@ -104,9 +170,16 @@ IN_PROC processors[] = {
     [IN_NOP] = proc_nop,
     [IN_LD] = proc_ld,
     [IN_JP] = proc_jp,
+    [IN_JR] = proc_jr,
+    [IN_CALL] = proc_call,
+    [IN_RST] = proc_rst,
+    [IN_RET] = proc_ret,
+    [IN_RETI] = proc_reti,
     [IN_DI] = proc_di,
     [IN_XOR] = proc_xor,
     [IN_LDH] = proc_ldh,
+    [IN_POP] = proc_pop,
+    [IN_PUSH] = proc_push,
 };
 
 IN_PROC inst_get_processor(in_type type)

@@ -36,6 +36,8 @@ add_library(gaboem_core STATIC
     lib/ppu.c
     include/ram.h
     lib/ram.c
+    include/stack.h
+    lib/stack.c
     include/timer.h
     lib/timer.c
     

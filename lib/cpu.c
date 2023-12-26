@@ -97,7 +97,7 @@ bool cpu_step(void)
         fetch_instruction();
         cpu_fetch_data();
 
-        printf("%04X: %-7s (%02X %02X %02X %02X) A: %02X F: %02X BC: %02X%02X DE: %02X%02X HL: %02X%02X\n", pc, instruction_name(ctx.current_instruction), ctx.current_opcode, bus_read(pc + 1), bus_read(pc + 2), bus_read(pc + 3), ctx.regs.a, ctx.regs.f, ctx.regs.b, ctx.regs.c, ctx.regs.d, ctx.regs.e, ctx.regs.h, ctx.regs.l);
+        printf("%04X: %-7s (%02X %02X %02X %02X) A: %02X F: %02X BC: %02X%02X DE: %02X%02X HL: %02X%02X SP: %04X\n", pc, instruction_name(ctx.current_instruction), ctx.current_opcode, bus_read(pc + 1), bus_read(pc + 2), bus_read(pc + 3), ctx.regs.a, ctx.regs.f, ctx.regs.b, ctx.regs.c, ctx.regs.d, ctx.regs.e, ctx.regs.h, ctx.regs.l, ctx.regs.sp);
 
         if (ctx.current_instruction == NULL)
         {
@@ -131,4 +131,9 @@ void cpu_set_interrupt_flags(u8 flags)
 u8 cpu_get_interrupt_flags()
 {
     return ctx.interrupt_flags;
+}
+
+cpu_registers *cpu_get_registers(void)
+{
+    return &ctx.regs;
 }
