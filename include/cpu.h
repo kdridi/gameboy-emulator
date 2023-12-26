@@ -1,7 +1,7 @@
 #pragma once
 
 #include <common.h>
-#include <instructions.h>
+#include <instruction.h>
 
 typedef struct
 {
@@ -23,6 +23,8 @@ typedef struct
     bool stepping;
 
     bool interrupts_enabled;
+    u8 interrupt_flags;
+
 } cpu_context;
 
 typedef void (*IN_PROC)(cpu_context *);
@@ -41,6 +43,9 @@ extern "C"
     void cpu_fetch_data(void);
 
     void cpu_set_flags(u8 z, u8 n, u8 h, u8 c);
+
+    void cpu_set_interrupt_flags(u8 flags);
+    u8 cpu_get_interrupt_flags();
 
     IN_PROC inst_get_processor(in_type type);
 

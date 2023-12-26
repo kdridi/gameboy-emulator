@@ -1,4 +1,4 @@
-#include <instructions.h>
+#include <instruction.h>
 #include <cpu.h>
 
 instruction instructions[0x100] = {

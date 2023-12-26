@@ -1,6 +1,5 @@
 #include <cpu.h>
 #include <bus.h>
-#include <instructions.h>
 
 cpu_context ctx = {0};
 
@@ -98,7 +97,7 @@ bool cpu_step(void)
         fetch_instruction();
         cpu_fetch_data();
 
-        printf("%04X: %-7s (%02X %02X %02X %02X) A: %02X F: %02X B: %02X C: %02X D: %02X E: %02X H: %02X L: %02X\n", pc, instruction_name(ctx.current_instruction), ctx.current_opcode, bus_read(pc + 1), bus_read(pc + 2), bus_read(pc + 3), ctx.regs.a, ctx.regs.f, ctx.regs.b, ctx.regs.c, ctx.regs.d, ctx.regs.e, ctx.regs.h, ctx.regs.l);
+        printf("%04X: %-7s (%02X %02X %02X %02X) A: %02X F: %02X BC: %02X%02X DE: %02X%02X HL: %02X%02X\n", pc, instruction_name(ctx.current_instruction), ctx.current_opcode, bus_read(pc + 1), bus_read(pc + 2), bus_read(pc + 3), ctx.regs.a, ctx.regs.f, ctx.regs.b, ctx.regs.c, ctx.regs.d, ctx.regs.e, ctx.regs.h, ctx.regs.l);
 
         if (ctx.current_instruction == NULL)
         {
@@ -122,4 +121,14 @@ void cpu_set_flags(u8 z, u8 n, u8 h, u8 c)
         BIT_SET(ctx.regs.f, 5, h);
     if (c != 0xff)
         BIT_SET(ctx.regs.f, 4, c);
+}
+
+void cpu_set_interrupt_flags(u8 flags)
+{
+    ctx.interrupt_flags = flags;
+}
+
+u8 cpu_get_interrupt_flags()
+{
+    return ctx.interrupt_flags;
 }

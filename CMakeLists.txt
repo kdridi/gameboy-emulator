@@ -22,15 +22,25 @@ find_package(SDL2_ttf CONFIG REQUIRED)
 
 # Add core library
 add_library(gaboem_core STATIC
+    include/bus.h
     lib/bus.c
+    include/cart.h
     lib/cart.c
+    include/cpu.h
     lib/cpu.c
+    include/emu.h
+    lib/emu.c
+    include/instruction.h
+    lib/instruction.c
+    include/ppu.h
+    lib/ppu.c
+    include/ram.h
+    lib/ram.c
+    include/timer.h
+    lib/timer.c
+    
     lib/cpu_fetch.c
     lib/cpu_proc.c
-    lib/emu.c
-    lib/instruction.c
-    lib/ppu.c
-    lib/timer.c
 )
 # Inclure les répertoires d'en-têtes de SDL2
 target_include_directories(gaboem_core PRIVATE ${SDL2_INCLUDE_DIRS})

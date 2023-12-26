@@ -17,6 +17,16 @@ static void proc_di(cpu_context *ctx)
     ctx->interrupts_enabled = false;
 }
 
+static void proc_ldh(cpu_context *ctx)
+{
+    if (ctx->dest_is_mem)
+        bus_write(ctx->mem_dest, ctx->fetched_data & 0xFF);
+    else
+        cpu_write_reg(ctx->current_instruction->reg_1, bus_read(ctx->fetched_data & 0xFF00));
+
+    emu_cycles(1);
+}
+
 static void proc_ld(cpu_context *ctx)
 {
     if (ctx->dest_is_mem)
@@ -96,6 +106,7 @@ IN_PROC processors[] = {
     [IN_JP] = proc_jp,
     [IN_DI] = proc_di,
     [IN_XOR] = proc_xor,
+    [IN_LDH] = proc_ldh,
 };
 
 IN_PROC inst_get_processor(in_type type)
