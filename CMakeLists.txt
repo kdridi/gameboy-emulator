@@ -25,6 +25,7 @@ add_library(gaboem_core STATIC
     lib/bus.c
     lib/cart.c
     lib/cpu.c
+    lib/cpu_fetch.c
     lib/cpu_proc.c
     lib/emu.c
     lib/instruction.c

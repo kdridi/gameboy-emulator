@@ -1,5 +1,6 @@
 #include <cpu.h>
 #include <emu.h>
+#include <bus.h>
 
 static void proc_none(cpu_context *ctx)
 {
@@ -18,7 +19,40 @@ static void proc_di(cpu_context *ctx)
 
 static void proc_ld(cpu_context *ctx)
 {
-    // TODO: Implement
+    if (ctx->dest_is_mem)
+    {
+        switch (ctx->current_instruction->reg_2)
+        {
+        case RT_AF:
+        case RT_BC:
+        case RT_DE:
+        case RT_HL:
+        case RT_SP:
+            bus_write(ctx->mem_dest + 0, ctx->fetched_data & 0xFF);
+            emu_cycles(1);
+            bus_write(ctx->mem_dest + 1, ctx->fetched_data >> 8);
+            break;
+        default:
+            bus_write(ctx->mem_dest, ctx->fetched_data & 0xFF);
+            break;
+        }
+
+        return;
+    }
+
+    if (ctx->current_instruction->mode == AM_HL_SPR)
+    {
+        u8 hflag = (cpu_read_reg(ctx->current_instruction->reg_2) & 0x0F) + (ctx->fetched_data & 0xF0) > 0x0F;
+        u8 cflag = (cpu_read_reg(ctx->current_instruction->reg_2) & 0xFF) + (ctx->fetched_data & 0xFF) > 0xFF;
+
+        cpu_set_flags(0, 0, hflag, cflag);
+
+        cpu_write_reg(ctx->current_instruction->reg_1, cpu_read_reg(ctx->current_instruction->reg_2) + (int8_t)ctx->fetched_data);
+
+        return;
+    }
+
+    cpu_write_reg(ctx->current_instruction->reg_1, ctx->fetched_data);
 }
 
 static void proc_xor(cpu_context *ctx)

@@ -21,7 +21,8 @@ u8 bus_read(u16 address)
         return cart_read(address);
     }
 
-    NO_IMPL(0);
+    printf("UNSUPPORTED bus_read at address 0x%04X\n", address);
+    // NO_IMPL(0);
 }
 
 void bus_write(u16 address, u8 value)
@@ -32,5 +33,6 @@ void bus_write(u16 address, u8 value)
         return;
     }
 
-    NO_IMPL();
+    printf("UNSUPPORTED bus_write at address 0x%04X\n", address);
+    // NO_IMPL();
 }

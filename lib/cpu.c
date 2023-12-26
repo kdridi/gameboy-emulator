@@ -1,7 +1,6 @@
 #include <cpu.h>
 #include <bus.h>
 #include <instructions.h>
-#include <emu.h>
 
 cpu_context ctx = {0};
 
@@ -32,6 +31,32 @@ u16 cpu_read_reg(reg_type rt)
     // clang-format on
 }
 
+void cpu_write_reg(reg_type rt, u16 value)
+{
+    // clang-format off
+    switch (rt)
+    {
+    case RT_A: ctx.regs.a = value; break;
+    case RT_F: ctx.regs.f = value; break;
+    case RT_B: ctx.regs.b = value; break;
+    case RT_C: ctx.regs.c = value; break;
+    case RT_D: ctx.regs.d = value; break;
+    case RT_E: ctx.regs.e = value; break;
+    case RT_H: ctx.regs.h = value; break;
+    case RT_L: ctx.regs.l = value; break;
+    case RT_AF: ctx.regs.a = value >> 8; ctx.regs.f = value & 0xFF; break;
+    case RT_BC: ctx.regs.b = value >> 8; ctx.regs.c = value & 0xFF; break;
+    case RT_DE: ctx.regs.d = value >> 8; ctx.regs.e = value & 0xFF; break;
+    case RT_HL: ctx.regs.h = value >> 8; ctx.regs.l = value & 0xFF; break;
+    case RT_SP: ctx.regs.sp = value; break;
+    case RT_PC: ctx.regs.pc = value; break;
+    default:
+        printf("Unhandled register type %d\n", rt);
+        abort();
+    }
+    // clang-format on
+}
+
 void cpu_init(void)
 {
     ctx.regs.a = 0x01;
@@ -56,49 +81,6 @@ static void fetch_instruction(void)
     ctx.current_instruction = instruction_by_opcode(ctx.current_opcode);
 }
 
-static void fetch_data(void)
-{
-    ctx.mem_dest = 0;
-    ctx.dest_is_mem = false;
-
-    if (ctx.current_instruction == NULL)
-        return;
-
-    switch (ctx.current_instruction->mode)
-    {
-    case AM_NONE:
-        return;
-
-    case AM_R:
-        ctx.fetched_data = cpu_read_reg(ctx.current_instruction->reg_1);
-        return;
-
-    case AM_R_D8:
-        ctx.fetched_data = bus_read(ctx.regs.pc);
-        emu_cycles(1);
-        ctx.regs.pc++;
-        return;
-    case AM_D16:
-    {
-        u16 lo = bus_read(ctx.regs.pc);
-        emu_cycles(1);
-        ctx.regs.pc++;
-
-        u16 hi = bus_read(ctx.regs.pc);
-        emu_cycles(1);
-        ctx.regs.pc++;
-
-        ctx.fetched_data = (hi << 8) | lo;
-
-        return;
-    }
-    default:
-        printf("Unhandled address mode %d\n", ctx.current_instruction->mode);
-        abort();
-        return;
-    }
-}
-
 static void execute(void)
 {
     IN_PROC proc = inst_get_processor(ctx.current_instruction->type);
@@ -114,7 +96,7 @@ bool cpu_step(void)
         u16 pc = ctx.regs.pc;
 
         fetch_instruction();
-        fetch_data();
+        cpu_fetch_data();
 
         printf("%04X: %-7s (%02X %02X %02X %02X) A: %02X F: %02X B: %02X C: %02X D: %02X E: %02X H: %02X L: %02X\n", pc, instruction_name(ctx.current_instruction), ctx.current_opcode, bus_read(pc + 1), bus_read(pc + 2), bus_read(pc + 3), ctx.regs.a, ctx.regs.f, ctx.regs.b, ctx.regs.c, ctx.regs.d, ctx.regs.e, ctx.regs.h, ctx.regs.l);
 
