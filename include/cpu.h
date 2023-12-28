@@ -22,8 +22,10 @@ typedef struct
     bool halted;
     bool stepping;
 
-    bool interrupts_enabled;
-    u8 interrupt_flags;
+    bool int_master_enabled;
+    bool enabling_ime;
+    u8 ie_register;
+    u8 int_flags;
 
 } cpu_context;
 

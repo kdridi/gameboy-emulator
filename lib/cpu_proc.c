@@ -30,7 +30,12 @@ static void proc_nop(cpu_context *ctx)
 
 static void proc_di(cpu_context *ctx)
 {
-    ctx->interrupts_enabled = false;
+    ctx->int_master_enabled = false;
+}
+
+static void proc_ei(cpu_context *ctx)
+{
+    ctx->enabling_ime = true;
 }
 
 static void proc_ldh(cpu_context *ctx)
@@ -171,7 +176,7 @@ static void proc_ret(cpu_context *ctx)
 
 static void proc_reti(cpu_context *ctx)
 {
-    ctx->interrupts_enabled = true;
+    ctx->int_master_enabled = true;
     proc_ret(ctx);
 }
 
@@ -462,6 +467,110 @@ static void proc_cb(cpu_context *ctx)
     NO_IMPL();
 }
 
+static void proc_rlca(cpu_context *ctx)
+{
+    u8 u = ctx->regs.a;
+    bool c = BIT(u, 7);
+    u <<= 1;
+    u |= c;
+    ctx->regs.a = u;
+
+    cpu_set_flags(0, 0, 0, c);
+}
+
+static void proc_rrca(cpu_context *ctx)
+{
+    u8 u = ctx->regs.a;
+    bool c = BIT(u, 0);
+    u >>= 1;
+    u |= c << 7;
+    ctx->regs.a = u;
+
+    cpu_set_flags(0, 0, 0, c);
+}
+
+static void proc_rla(cpu_context *ctx)
+{
+    u8 u = ctx->regs.a;
+    bool c = BIT(u, 7);
+    u <<= 1;
+    u |= CPU_FLAG_C(ctx);
+    ctx->regs.a = u;
+
+    cpu_set_flags(0, 0, 0, c);
+}
+
+static void proc_rra(cpu_context *ctx)
+{
+    u8 u = ctx->regs.a;
+    bool c = BIT(u, 0);
+    u >>= 1;
+    u |= CPU_FLAG_C(ctx) << 7;
+    ctx->regs.a = u;
+
+    cpu_set_flags(0, 0, 0, c);
+}
+
+static void proc_stop(cpu_context *ctx)
+{
+    ctx->halted = true;
+    NO_IMPL();
+}
+
+static void proc_daa(cpu_context *ctx)
+{
+    u8 a = ctx->regs.a;
+    u8 f = ctx->regs.f;
+
+    if (!CPU_FLAG_N(ctx))
+    {
+        if (CPU_FLAG_C(ctx) || a > 0x99)
+        {
+            a += 0x60;
+            BIT_SET(f, 4, 1);
+        }
+        if (CPU_FLAG_H(ctx) || (a & 0x0F) > 0x09)
+        {
+            a += 0x06;
+        }
+    }
+    else
+    {
+        if (CPU_FLAG_C(ctx))
+        {
+            a -= 0x60;
+        }
+        if (CPU_FLAG_H(ctx))
+        {
+            a -= 0x06;
+        }
+    }
+
+    cpu_set_flags(a == 0, -1, 0, a > 0xFF);
+    ctx->regs.a = a;
+}
+
+static void proc_cpl(cpu_context *ctx)
+{
+    ctx->regs.a = ~ctx->regs.a;
+    cpu_set_flags(-1, 1, 1, -1);
+}
+
+static void proc_scf(cpu_context *ctx)
+{
+    cpu_set_flags(-1, 0, 0, 1);
+}
+
+static void proc_ccf(cpu_context *ctx)
+{
+    cpu_set_flags(-1, 0, 0, !CPU_FLAG_C(ctx));
+}
+
+static void proc_halt(cpu_context *ctx)
+{
+    ctx->halted = true;
+}
+
 IN_PROC processors[] = {
     [IN_NONE] = proc_none,
     [IN_NOP] = proc_nop,
@@ -473,6 +582,7 @@ IN_PROC processors[] = {
     [IN_RET] = proc_ret,
     [IN_RETI] = proc_reti,
     [IN_DI] = proc_di,
+    [IN_EI] = proc_ei,
     [IN_XOR] = proc_xor,
     [IN_AND] = proc_and,
     [IN_OR] = proc_or,
@@ -487,6 +597,16 @@ IN_PROC processors[] = {
     [IN_SUB] = proc_sub,
     [IN_SBC] = proc_sbc,
     [IN_CB] = proc_cb,
+    [IN_RLCA] = proc_rlca,
+    [IN_RRCA] = proc_rrca,
+    [IN_RLA] = proc_rla,
+    [IN_RRA] = proc_rra,
+    [IN_STOP] = proc_stop,
+    [IN_DAA] = proc_daa,
+    [IN_CPL] = proc_cpl,
+    [IN_SCF] = proc_scf,
+    [IN_CCF] = proc_ccf,
+    [IN_HALT] = proc_halt,
 };
 
 IN_PROC inst_get_processor(in_type type)

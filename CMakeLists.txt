@@ -32,6 +32,8 @@ add_library(gaboem_core STATIC
     lib/emu.c
     include/instruction.h
     lib/instruction.c
+    include/interrupts.h
+    lib/interrupts.c
     include/ppu.h
     lib/ppu.c
     include/ram.h
@@ -40,6 +42,8 @@ add_library(gaboem_core STATIC
     lib/stack.c
     include/timer.h
     lib/timer.c
+    include/ui.h
+    lib/ui.c
     
     lib/cpu_fetch.c
     lib/cpu_proc.c

@@ -1,10 +1,11 @@
 #include <emu.h>
 #include <cart.h>
 #include <cpu.h>
+#include <ui.h>
 
 #include <stdio.h>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_ttf.h>
+#include <pthread.h>
+#include <unistd.h>
 
 static emu_context ctx;
 
@@ -13,31 +14,9 @@ emu_context *emu_get_context(void)
     return &ctx;
 }
 
-void delay(u32 ms)
+void *cpu_run(void *data)
 {
-    SDL_Delay(ms);
-}
-
-int emu_run(int argc, char **argv)
-{
-    if (argc < 2)
-    {
-        printf("Usage: %s <rom>\n", argv[0]);
-        return -1;
-    }
-
-    if (!cart_load(argv[1]))
-    {
-        printf("Failed to load ROM file: %s\n", argv[1]);
-        return -2;
-    }
-
-    printf("Cart loaded...\n");
-
-    SDL_Init(SDL_INIT_VIDEO);
-    printf("SDL INIT\n");
-    TTF_Init();
-    printf("TTF INIT\n");
+    ((void)data);
 
     cpu_init();
 
@@ -56,10 +35,45 @@ int emu_run(int argc, char **argv)
         if (!cpu_step())
         {
             printf("CPU Stopped\n");
-            return -3;
+            return NULL;
         }
 
         ctx.ticks++;
+    }
+
+    return NULL;
+}
+
+int emu_run(int argc, char **argv)
+{
+    if (argc < 2)
+    {
+        printf("Usage: %s <rom>\n", argv[0]);
+        return -1;
+    }
+
+    if (!cart_load(argv[1]))
+    {
+        printf("Failed to load ROM file: %s\n", argv[1]);
+        return -2;
+    }
+
+    printf("Cart loaded...\n");
+
+    ui_init();
+
+    pthread_t cpu_thread;
+    if (pthread_create(&cpu_thread, NULL, cpu_run, NULL))
+    {
+
+        printf("Failed to create CPU thread\n");
+        return 84;
+    }
+
+    while (!ctx.die)
+    {
+        usleep(1000);
+        ui_handle_events();
     }
 
     return 0;

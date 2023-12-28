@@ -1,6 +1,7 @@
 #include <cpu.h>
 #include <bus.h>
 #include <emu.h>
+#include <interrupts.h>
 
 cpu_context ctx = {0};
 
@@ -115,7 +116,8 @@ void cpu_init(void)
 
     ctx.halted = false;
     ctx.stepping = false;
-    ctx.interrupts_enabled = true;
+    ctx.int_master_enabled = true;
+    ctx.enabling_ime = false;
 }
 
 static void fetch_instruction(void)
@@ -157,6 +159,27 @@ bool cpu_step(void)
 
         execute();
     }
+    else
+    {
+        emu_cycles(1);
+
+        if (ctx.int_flags != 0)
+        {
+            ctx.halted = false;
+        }
+    }
+
+    if (ctx.int_master_enabled)
+    {
+        cpu_handle_interrupts(&ctx);
+        ctx.enabling_ime = false;
+    }
+
+    if (ctx.enabling_ime)
+    {
+        ctx.int_master_enabled = true;
+        ctx.enabling_ime = false;
+    }
 
     return true;
 }
@@ -175,12 +198,12 @@ void cpu_set_flags(u8 z, u8 n, u8 h, u8 c)
 
 void cpu_set_interrupt_flags(u8 flags)
 {
-    ctx.interrupt_flags = flags;
+    ctx.int_flags = flags;
 }
 
 u8 cpu_get_interrupt_flags()
 {
-    return ctx.interrupt_flags;
+    return ctx.int_flags;
 }
 
 cpu_registers *cpu_get_registers(void)
