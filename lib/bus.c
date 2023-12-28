@@ -58,8 +58,7 @@ u8 bus_read(u16 address)
     else if (address < 0xFE00)
     {
         // TODO: Echo RAM
-        printf("UNSUPPORTED bus_read at address 0x%04X\n", address);
-        NO_IMPL(0);
+        return 0;
     }
     else if (address < 0xFEA0)
     {
@@ -118,9 +117,7 @@ void bus_write(u16 address, u8 value)
     }
     else if (address < 0xFE00)
     {
-        // TODO: Echo RAM
-        printf("UNSUPPORTED bus_write at address 0x%04X value 0x%02X\n", address, value);
-        NO_IMPL();
+        return;
     }
     else if (address < 0xFEA0)
     {

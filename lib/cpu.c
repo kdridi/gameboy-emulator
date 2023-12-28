@@ -1,5 +1,6 @@
 #include <cpu.h>
 #include <bus.h>
+#include <emu.h>
 
 cpu_context ctx = {0};
 
@@ -58,8 +59,8 @@ void cpu_write_reg(reg_type rt, u16 value)
 
 void cpu_init(void)
 {
-    ctx.regs.a = 0x01;
-    ctx.regs.f = 0xB0;
+    ctx.regs.a = 0x00;
+    ctx.regs.f = 0x00;
     ctx.regs.b = 0x00;
     ctx.regs.c = 0x13;
     ctx.regs.d = 0x00;
@@ -68,6 +69,7 @@ void cpu_init(void)
     ctx.regs.l = 0x4D;
     ctx.regs.sp = 0xFFFE;
     ctx.regs.pc = 0x0100;
+    ctx.regs.spc = 0;
 
     ctx.halted = false;
     ctx.stepping = false;
@@ -97,7 +99,13 @@ bool cpu_step(void)
         fetch_instruction();
         cpu_fetch_data();
 
-        printf("%04X: %-7s (%02X %02X %02X %02X) A: %02X F: %02X BC: %02X%02X DE: %02X%02X HL: %02X%02X SP: %04X\n", pc, instruction_name(ctx.current_instruction), ctx.current_opcode, bus_read(pc + 1), bus_read(pc + 2), bus_read(pc + 3), ctx.regs.a, ctx.regs.f, ctx.regs.b, ctx.regs.c, ctx.regs.d, ctx.regs.e, ctx.regs.h, ctx.regs.l, ctx.regs.sp);
+        printf("%08llX - ", emu_get_context()->ticks);
+        printf("%04X: %-7s (%02X %02X %02X %02X) A: %02X F: %c%c%c%c BC: %02X%02X DE: %02X%02X HL: %02X%02X SP: %04X", pc, instruction_name(ctx.current_instruction), ctx.current_opcode, bus_read(pc + 1), bus_read(pc + 2), bus_read(pc + 3), ctx.regs.a, ctx.regs.f & 0x80 ? 'Z' : '-', ctx.regs.f & 0x40 ? 'N' : '-', ctx.regs.f & 0x20 ? 'H' : '-', ctx.regs.f & 0x10 ? 'C' : '-', ctx.regs.b, ctx.regs.c, ctx.regs.d, ctx.regs.e, ctx.regs.h, ctx.regs.l, ctx.regs.sp);
+        if (ctx.regs.spc > 0)
+            printf(" STACK:");
+        for (u8 i = 0; i < ctx.regs.spc; i++)
+            printf(" %02hhX", bus_read(ctx.regs.sp + i) & 0xFF);
+        printf("\n");
 
         if (ctx.current_instruction == NULL)
         {

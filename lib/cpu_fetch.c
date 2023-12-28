@@ -70,7 +70,7 @@ void cpu_fetch_data(void)
 
     case AM_R_HLI:
     {
-        assert(ctx.current_instruction->reg_2 == RT_HL);
+        assert(ctx.current_instruction->reg_2 == RT_NONE);
 
         u16 addr = cpu_read_reg(RT_HL);
         ctx.fetched_data = bus_read(addr);
@@ -82,7 +82,7 @@ void cpu_fetch_data(void)
 
     case AM_R_HLD:
     {
-        assert(ctx.current_instruction->reg_2 == RT_HL);
+        assert(ctx.current_instruction->reg_2 == RT_NONE);
 
         u16 addr = cpu_read_reg(RT_HL);
         ctx.fetched_data = bus_read(addr);

@@ -4,6 +4,7 @@
 
 void stack_push(u8 data)
 {
+    cpu_get_registers()->spc += 1;
     cpu_get_registers()->sp--;
     bus_write(cpu_get_registers()->sp, data);
 }
@@ -18,6 +19,7 @@ u8 stack_pop()
 {
     u8 data = bus_read(cpu_get_registers()->sp);
     cpu_get_registers()->sp++;
+    cpu_get_registers()->spc -= 1;
     return data;
 }
 
