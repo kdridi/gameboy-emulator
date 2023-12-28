@@ -2,6 +2,7 @@
 #include <cart.h>
 #include <ram.h>
 #include <cpu.h>
+#include <io.h>
 
 // 0x0000 - 0x3FFF  :   16 KiB ROM bank 00                  :   From cartridge, usually a fixed bank
 // 0x4000 - 0x7FFF  :   16 KiB ROM Bank 01~NN               :   From cartridge, switchable bank via mapper (if any)
@@ -42,14 +43,14 @@ u8 bus_read(u16 address)
     else if (address < 0xA000)
     {
         // TODO: Character RAM / Video RAM
-        printf("UNSUPPORTED bus_read at address 0x%04X\n", address);
-        NO_IMPL(0);
+        printf("UNSUPPORTED bus_read(0x%04X)\n", address);
+        // NO_IMPL(0);
+        return 0;
     }
     else if (address < 0xC000)
     {
         // TODO: Cartridge RAM
-        printf("UNSUPPORTED bus_read at address 0x%04X\n", address);
-        NO_IMPL(0);
+        return cart_read(address);
     }
     else if (address < 0xE000)
     {
@@ -63,20 +64,19 @@ u8 bus_read(u16 address)
     else if (address < 0xFEA0)
     {
         // TODO: Object Attribute Memory (OAM)
-        printf("UNSUPPORTED bus_read at address 0x%04X\n", address);
-        NO_IMPL(0);
+        printf("UNSUPPORTED bus_read(0x%04X)\n", address);
+        // NO_IMPL(0);
+        return 0;
     }
     else if (address < 0xFF00)
     {
         // TODO: Unusable Memory
-        printf("UNSUPPORTED bus_read at address 0x%04X\n", address);
+        printf("UNSUPPORTED bus_read(0x%04X)\n", address);
         NO_IMPL(0);
     }
     else if (address < 0xFF80)
     {
-        // TODO: Hardware I/O Registers
-        printf("UNSUPPORTED bus_read at address 0x%04X\n", address);
-        NO_IMPL(0);
+        return io_read(address);
     }
     else if (address < 0xFFFF)
     {
@@ -86,7 +86,7 @@ u8 bus_read(u16 address)
     else if (address == 0xFFFF)
     {
         // Interrupt Enable Flag
-        return cpu_get_interrupt_flags();
+        return cpu_get_ie_register();
     }
     assert(false);
 }
@@ -101,14 +101,14 @@ void bus_write(u16 address, u8 value)
     else if (address < 0xA000)
     {
         // TODO: Character RAM / Video RAM
-        printf("UNSUPPORTED bus_write at address 0x%04X value 0x%02X\n", address, value);
-        NO_IMPL();
+        printf("UNSUPPORTED bus_write(%04X)\n", address);
+        // NO_IMPL();
+        return;
     }
     else if (address < 0xC000)
     {
         // TODO: Cartridge RAM
-        printf("UNSUPPORTED bus_write at address 0x%04X value 0x%02X\n", address, value);
-        NO_IMPL();
+        cart_write(address, value);
     }
     else if (address < 0xE000)
     {
@@ -122,20 +122,19 @@ void bus_write(u16 address, u8 value)
     else if (address < 0xFEA0)
     {
         // TODO: Object Attribute Memory (OAM)
-        printf("UNSUPPORTED bus_write at address 0x%04X value 0x%02X\n", address, value);
-        NO_IMPL();
+        printf("UNSUPPORTED bus_write(%04X)\n", address);
+        // NO_IMPL();
+        return;
     }
     else if (address < 0xFF00)
     {
         // TODO: Unusable Memory
-        printf("UNSUPPORTED bus_write at address 0x%04X value 0x%02X\n", address, value);
+        printf("UNSUPPORTED bus_write(%04X)\n", address);
         NO_IMPL();
     }
     else if (address < 0xFF80)
     {
-        // TODO: Hardware I/O Registers
-        printf("[Hardware I/O Registers] bus_write at address 0x%04X value 0x%02X\n", address, value);
-        // NO_IMPL();
+        io_write(address, value);
         return;
     }
     else if (address < 0xFFFF)
@@ -147,8 +146,22 @@ void bus_write(u16 address, u8 value)
     else if (address == 0xFFFF)
     {
         // Interrupt Enable Flag
-        cpu_set_interrupt_flags(value);
+        cpu_set_ie_register(value);
         return;
     }
     assert(false);
+}
+
+u16 bus_read16(u16 address)
+{
+    u16 lo = bus_read(address);
+    u16 hi = bus_read(address + 1);
+
+    return lo | (hi << 8);
+}
+
+void bus_write16(u16 address, u16 value)
+{
+    bus_write(address + 1, (value >> 8) & 0xFF);
+    bus_write(address, value & 0xFF);
 }

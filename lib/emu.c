@@ -2,6 +2,7 @@
 #include <cart.h>
 #include <cpu.h>
 #include <ui.h>
+#include <timer.h>
 
 #include <stdio.h>
 #include <pthread.h>
@@ -18,6 +19,7 @@ void *cpu_run(void *data)
 {
     ((void)data);
 
+    timer_init();
     cpu_init();
 
     ctx.running = true;
@@ -32,13 +34,16 @@ void *cpu_run(void *data)
             continue;
         }
 
+        if (emu_get_context()->ticks >= 0x000201E0)
+        {
+            // printf("BREAK\n");
+        }
+
         if (!cpu_step())
         {
             printf("CPU Stopped\n");
             return NULL;
         }
-
-        ctx.ticks++;
     }
 
     return NULL;
@@ -79,7 +84,14 @@ int emu_run(int argc, char **argv)
     return 0;
 }
 
-void emu_cycles(u64 cycles)
+void emu_cycles(u64 cpu_cycles)
 {
     // TODO: Implement
+    u64 n = cpu_cycles * 4;
+
+    for (u64 i = 0; i < n; i++)
+    {
+        ctx.ticks++;
+        timer_tick();
+    }
 }

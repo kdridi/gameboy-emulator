@@ -2,6 +2,8 @@
 #include <bus.h>
 #include <emu.h>
 #include <interrupts.h>
+#include <dbg.h>
+#include <timer.h>
 
 cpu_context ctx = {0};
 
@@ -26,7 +28,7 @@ u16 cpu_read_reg(reg_type rt)
     case RT_PC: return ctx.regs.pc;
     default:
         printf("Unhandled register type %d\n", rt);
-        abort();
+        assert(false);
         return 0;
     }
     // clang-format on
@@ -53,7 +55,7 @@ void cpu_write_reg(reg_type rt, u16 value)
     case RT_PC: ctx.regs.pc = value; break;
     default:
         printf("Unhandled register type %d\n", rt);
-        abort();
+        assert(false);
     }
     // clang-format on
 }
@@ -102,8 +104,8 @@ void cpu_write_reg8(reg_type rt, u8 value)
 
 void cpu_init(void)
 {
-    ctx.regs.a = 0x00;
-    ctx.regs.f = 0x00;
+    ctx.regs.a = 0x01;
+    ctx.regs.f = 0xB0;
     ctx.regs.b = 0x00;
     ctx.regs.c = 0x13;
     ctx.regs.d = 0x00;
@@ -112,12 +114,16 @@ void cpu_init(void)
     ctx.regs.l = 0x4D;
     ctx.regs.sp = 0xFFFE;
     ctx.regs.pc = 0x0100;
-    ctx.regs.spc = 0;
+
+    ctx.ie_register = 0x00;
+    ctx.int_flags = 0x00;
+    ctx.int_master_enabled = false;
+    ctx.enabling_ime = false;
+
+    timer_get_context()->div = 0xABCC;
 
     ctx.halted = false;
     ctx.stepping = false;
-    ctx.int_master_enabled = true;
-    ctx.enabling_ime = false;
 }
 
 static void fetch_instruction(void)
@@ -141,21 +147,33 @@ bool cpu_step(void)
         u16 pc = ctx.regs.pc;
 
         fetch_instruction();
+        emu_cycles(1);
         cpu_fetch_data();
 
-        printf("%08llX - ", emu_get_context()->ticks);
-        printf("%04X: %-7s (%02X %02X %02X %02X) A: %02X F: %c%c%c%c BC: %02X%02X DE: %02X%02X HL: %02X%02X SP: %04X", pc, instruction_name(ctx.current_instruction), ctx.current_opcode, bus_read(pc + 1), bus_read(pc + 2), bus_read(pc + 3), ctx.regs.a, ctx.regs.f & 0x80 ? 'Z' : '-', ctx.regs.f & 0x40 ? 'N' : '-', ctx.regs.f & 0x20 ? 'H' : '-', ctx.regs.f & 0x10 ? 'C' : '-', ctx.regs.b, ctx.regs.c, ctx.regs.d, ctx.regs.e, ctx.regs.h, ctx.regs.l, ctx.regs.sp);
-        if (ctx.regs.spc > 0)
-            printf(" STACK:");
-        for (u8 i = 0; i < ctx.regs.spc; i++)
-            printf(" %02hhX", bus_read(ctx.regs.sp + i) & 0xFF);
-        printf("\n");
+        char flags[16];
+        sprintf(flags, "%c%c%c%c",
+                ctx.regs.f & (1 << 7) ? 'Z' : '-',
+                ctx.regs.f & (1 << 6) ? 'N' : '-',
+                ctx.regs.f & (1 << 5) ? 'H' : '-',
+                ctx.regs.f & (1 << 4) ? 'C' : '-');
+
+        char inst[16];
+        instr_to_str(&ctx, inst);
+
+        printf("%08llX - %04X: %-12s (%02X %02X %02X) A: %02X F: %s BC: %02X%02X DE: %02X%02X HL: %02X%02X\n",
+               emu_get_context()->ticks,
+               pc, inst, ctx.current_opcode,
+               bus_read(pc + 1), bus_read(pc + 2), ctx.regs.a, flags, ctx.regs.b, ctx.regs.c,
+               ctx.regs.d, ctx.regs.e, ctx.regs.h, ctx.regs.l);
 
         if (ctx.current_instruction == NULL)
         {
-            printf("Unknown instruction: 0x%02X\n", ctx.current_opcode);
-            exit(84);
+            printf("Unknown Instruction! %02X\n", ctx.current_opcode);
+            exit(-7);
         }
+
+        dbg_update();
+        dbg_print();
 
         execute();
     }
@@ -186,27 +204,49 @@ bool cpu_step(void)
 
 void cpu_set_flags(u8 z, u8 n, u8 h, u8 c)
 {
+    assert(z == 0xff || z == 0 || z == 1);
     if (z != 0xff)
         BIT_SET(ctx.regs.f, 7, z);
+
+    assert(n == 0xff || n == 0 || n == 1);
     if (n != 0xff)
         BIT_SET(ctx.regs.f, 6, n);
+
+    assert(h == 0xff || h == 0 || h == 1);
     if (h != 0xff)
         BIT_SET(ctx.regs.f, 5, h);
+
+    assert(c == 0xff || c == 0 || c == 1);
     if (c != 0xff)
         BIT_SET(ctx.regs.f, 4, c);
 }
 
-void cpu_set_interrupt_flags(u8 flags)
+u8 cpu_get_ie_register()
 {
-    ctx.int_flags = flags;
+    return ctx.ie_register;
 }
 
-u8 cpu_get_interrupt_flags()
+void cpu_set_ie_register(u8 n)
 {
-    return ctx.int_flags;
+    ctx.ie_register = n;
 }
 
 cpu_registers *cpu_get_registers(void)
 {
     return &ctx.regs;
+}
+
+u8 cpu_get_int_flags()
+{
+    return ctx.int_flags;
+}
+
+void cpu_set_int_flags(u8 value)
+{
+    ctx.int_flags = value;
+}
+
+void cpu_request_interrupt(interrupt_type type)
+{
+    ctx.int_flags |= type;
 }

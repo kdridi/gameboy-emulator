@@ -28,12 +28,16 @@ add_library(gaboem_core STATIC
     lib/cart.c
     include/cpu.h
     lib/cpu.c
+    include/dbg.h
+    lib/dbg.c
     include/emu.h
     lib/emu.c
     include/instruction.h
     lib/instruction.c
     include/interrupts.h
     lib/interrupts.c
+    include/io.h
+    lib/io.c
     include/ppu.h
     lib/ppu.c
     include/ram.h

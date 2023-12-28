@@ -3,7 +3,7 @@
 typedef struct
 {
     char filename[1024];
-    u32 rom_size;
+    u64 rom_size;
     u8 *rom_data;
     rom_header *header;
 } cart_context;

@@ -15,8 +15,10 @@ bool int_check(cpu_context *ctx, u16 address, interrupt_type it)
         ctx->int_flags &= ~it;
         ctx->halted = false;
         ctx->int_master_enabled = false;
+
         return true;
     }
+
     return false;
 }
 
