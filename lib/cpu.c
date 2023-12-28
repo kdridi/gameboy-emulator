@@ -57,6 +57,48 @@ void cpu_write_reg(reg_type rt, u16 value)
     // clang-format on
 }
 
+u8 cpu_read_reg8(reg_type rt)
+{
+    // clang-format off
+    switch (rt)
+    {
+    case RT_A: return ctx.regs.a;
+    case RT_F: return ctx.regs.f;
+    case RT_B: return ctx.regs.b;
+    case RT_C: return ctx.regs.c;
+    case RT_D: return ctx.regs.d;
+    case RT_E: return ctx.regs.e;
+    case RT_H: return ctx.regs.h;
+    case RT_L: return ctx.regs.l;
+    case RT_HL: return bus_read(cpu_read_reg(RT_HL));
+    default:
+        printf("**ERR INVALID REG8: %d\n", rt);
+        NO_IMPL(0);
+    }
+    // clang-format on
+}
+
+void cpu_write_reg8(reg_type rt, u8 value)
+{
+    // clang-format off
+    switch (rt)
+    {
+    case RT_A: ctx.regs.a = value & 0xFF; break;
+    case RT_F: ctx.regs.f = value & 0xFF; break;
+    case RT_B: ctx.regs.b = value & 0xFF; break;
+    case RT_C: ctx.regs.c = value & 0xFF; break;
+    case RT_D: ctx.regs.d = value & 0xFF; break;
+    case RT_E: ctx.regs.e = value & 0xFF; break;
+    case RT_H: ctx.regs.h = value & 0xFF; break;
+    case RT_L: ctx.regs.l = value & 0xFF; break;
+    case RT_HL: bus_write(cpu_read_reg(RT_HL), value & 0xFF); break;
+    default:
+        printf("**ERR INVALID REG8: %d\n", rt);
+        abort();
+    }
+    // clang-format on
+}
+
 void cpu_init(void)
 {
     ctx.regs.a = 0x00;

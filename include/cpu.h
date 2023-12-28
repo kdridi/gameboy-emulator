@@ -40,6 +40,9 @@ extern "C"
     u16 cpu_read_reg(reg_type rt);
     void cpu_write_reg(reg_type rt, u16 value);
 
+    u8 cpu_read_reg8(reg_type rt);
+    void cpu_write_reg8(reg_type rt, u8 value);
+
     void cpu_fetch_data(void);
 
     void cpu_set_flags(u8 z, u8 n, u8 h, u8 c);

@@ -300,6 +300,168 @@ static void proc_sbc(cpu_context *ctx)
     cpu_set_flags(zflag, 1, hflag, cflag);
 }
 
+static void proc_and(cpu_context *ctx)
+{
+    ctx->regs.a &= ctx->fetched_data & 0xFF;
+    cpu_set_flags(ctx->regs.a == 0, 0, 1, 0);
+}
+
+static void proc_or(cpu_context *ctx)
+{
+    ctx->regs.a |= ctx->fetched_data & 0xFF;
+    cpu_set_flags(ctx->regs.a == 0, 0, 0, 0);
+}
+
+static void proc_cp(cpu_context *ctx)
+{
+    int16_t value = (int16_t)ctx->regs.a - (int16_t)ctx->fetched_data;
+
+    u8 zflag = (value & 0xFF) == 0;
+    u8 hflag = (int16_t)(ctx->regs.a & 0x0F) < (int16_t)(ctx->fetched_data & 0x0F);
+    u8 cflag = (int16_t)(ctx->regs.a & 0xFF) < (int16_t)(ctx->fetched_data & 0xFF);
+
+    cpu_set_flags(zflag, 1, hflag, cflag);
+}
+
+reg_type rt_lookup[] = {
+    [0x00] = RT_B,
+    [0x01] = RT_C,
+    [0x02] = RT_D,
+    [0x03] = RT_E,
+    [0x04] = RT_H,
+    [0x05] = RT_L,
+    [0x06] = RT_HL,
+    [0x07] = RT_A,
+};
+
+reg_type decode_reg(u8 opcode)
+{
+    if (opcode > 0x07)
+        return RT_NONE;
+    return rt_lookup[opcode & 0x07];
+}
+
+static void proc_cb(cpu_context *ctx)
+{
+    u8 op = ctx->fetched_data & 0xFF;
+    reg_type reg = decode_reg(op & 0x07);
+    u8 bit = (op >> 3) & 0x07;
+    u8 bit_op = (op >> 6) & 0x03;
+    u8 reg_val = cpu_read_reg8(reg);
+    emu_cycles(1);
+
+    if (reg == RT_HL)
+        emu_cycles(2);
+
+    switch (bit_op)
+    {
+    case 1: // BIT
+        cpu_set_flags(!BIT(reg_val, bit), 0, 1, -1);
+        break;
+    case 2: // RESET
+        reg_val &= ~(1 << bit);
+        cpu_write_reg8(reg, reg_val);
+        break;
+    case 3: // SET
+        reg_val |= (1 << bit);
+        cpu_write_reg8(reg, reg_val);
+        break;
+    default:
+        break;
+    }
+
+    bool flagC = CPU_FLAG_C(ctx);
+
+    switch (bit)
+    {
+    case 0: // RLC
+    {
+        bool setC = false;
+        u8 result = (reg_val << 1) & 0xFF;
+        if (BIT(reg_val, 7))
+        {
+            result |= 1;
+            setC = true;
+        }
+        cpu_write_reg8(reg, result);
+        cpu_set_flags(result == 0, 0, 0, setC);
+        return;
+    }
+    case 1: // RRC
+    {
+        bool setC = false;
+        u8 result = (reg_val >> 1) & 0xFF;
+        if (BIT(reg_val, 0))
+        {
+            result |= 0x80;
+            setC = true;
+        }
+        cpu_write_reg8(reg, result);
+        cpu_set_flags(result == 0, 0, 0, setC);
+        return;
+    }
+    case 2: // RL
+    {
+        u8 old = reg_val;
+        reg_val <<= 1;
+        reg_val |= flagC;
+
+        cpu_write_reg8(reg, reg_val);
+        cpu_set_flags(reg_val == 0, 0, 0, BIT(old, 7));
+        return;
+    }
+    case 3: // RR
+    {
+        u8 old = reg_val;
+        reg_val >>= 1;
+        reg_val |= flagC << 7;
+
+        cpu_write_reg8(reg, reg_val);
+        cpu_set_flags(reg_val == 0, 0, 0, BIT(old, 0));
+        return;
+    }
+    case 4: // SLA
+    {
+        u8 old = reg_val;
+        reg_val <<= 1;
+
+        cpu_write_reg8(reg, reg_val);
+        cpu_set_flags(reg_val == 0, 0, 0, BIT(old, 7));
+        return;
+    }
+    case 5: // SRA
+    {
+        u8 old = reg_val;
+        reg_val >>= 1;
+        reg_val |= old & 0x80;
+
+        cpu_write_reg8(reg, reg_val);
+        cpu_set_flags(reg_val == 0, 0, 0, BIT(old, 0));
+        return;
+    }
+    case 6: // SWAP
+    {
+        u8 old = reg_val;
+        reg_val = ((reg_val & 0x0F) << 4) | ((reg_val & 0xF0) >> 4);
+
+        cpu_write_reg8(reg, reg_val);
+        cpu_set_flags(reg_val == 0, 0, 0, 0);
+        return;
+    }
+    case 7: // SRL
+    {
+        u8 old = reg_val;
+        reg_val >>= 1;
+
+        cpu_write_reg8(reg, reg_val);
+        cpu_set_flags(reg_val == 0, 0, 0, BIT(old, 0));
+        return;
+    }
+    }
+
+    NO_IMPL();
+}
+
 IN_PROC processors[] = {
     [IN_NONE] = proc_none,
     [IN_NOP] = proc_nop,
@@ -312,6 +474,9 @@ IN_PROC processors[] = {
     [IN_RETI] = proc_reti,
     [IN_DI] = proc_di,
     [IN_XOR] = proc_xor,
+    [IN_AND] = proc_and,
+    [IN_OR] = proc_or,
+    [IN_CP] = proc_cp,
     [IN_LDH] = proc_ldh,
     [IN_POP] = proc_pop,
     [IN_PUSH] = proc_push,
@@ -321,6 +486,7 @@ IN_PROC processors[] = {
     [IN_ADD] = proc_add,
     [IN_SUB] = proc_sub,
     [IN_SBC] = proc_sbc,
+    [IN_CB] = proc_cb,
 };
 
 IN_PROC inst_get_processor(in_type type)
