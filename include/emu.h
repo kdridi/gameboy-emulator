@@ -15,6 +15,8 @@ extern "C"
 {
 #endif
 
+    void emu_init(void);
+
     int emu_run(int argc, char **argv);
     void emu_cycles(u64 cycles);
 

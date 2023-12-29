@@ -17,10 +17,8 @@ emu_context *emu_get_context(void)
     return &ctx;
 }
 
-void *cpu_run(void *data)
+void emu_init(void)
 {
-    ((void)data);
-
     timer_init();
     cpu_init();
     ppu_init();
@@ -28,6 +26,11 @@ void *cpu_run(void *data)
     ctx.running = true;
     ctx.paused = false;
     ctx.ticks = 0;
+}
+
+void *cpu_run(void *data)
+{
+    ((void)data);
 
     while (ctx.running)
     {
@@ -68,6 +71,7 @@ int emu_run(int argc, char **argv)
 
     printf("Cart loaded..\n");
 
+    emu_init();
     ui_init();
 
     pthread_t cpu_thread;

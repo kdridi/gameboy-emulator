@@ -6,7 +6,7 @@
 typedef struct
 {
     u8 a, f, b, c, d, e, h, l;
-    u16 pc, sp, spc;
+    u16 pc, sp;
 } cpu_registers;
 
 typedef struct
