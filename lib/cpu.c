@@ -178,7 +178,9 @@ bool cpu_step(void)
         }
 
         dbg_update();
+#if CPU_DEBUG == 1
         dbg_print();
+#endif
 
         execute();
     }
