@@ -50,9 +50,9 @@ void ppu_mode_xfer(void)
 void ppu_mode_hblank(void)
 {
     static u32 target_frame_time = 15;
-    static long prev_frame_time = 0;
-    static long start_timer = 0;
-    static long frame_count = 0;
+    static u32 prev_frame_time = 0;
+    static u32 start_timer = 0;
+    static u32 frame_count = 0;
 
     if (PPU->line_ticks >= 80 + 172 + 204) // TICKS_PER_LINE = 80 + 172 + 204 = 456
     {
@@ -68,7 +68,7 @@ void ppu_mode_hblank(void)
             PPU->current_frame++;
 
             // calc FPS
-            long end = get_ticks();
+            u32 end = get_ticks();
             u32 frame_time = end - prev_frame_time;
 
             if (frame_time < target_frame_time)

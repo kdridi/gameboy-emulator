@@ -145,7 +145,9 @@ bool cpu_step(void)
 {
     if (!CPU.halted)
     {
+#if CPU_DEBUG == 1
         u16 pc = REGS.pc;
+#endif
 
         fetch_instruction();
         emu_cycles(1);

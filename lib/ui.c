@@ -28,7 +28,7 @@ u32 get_ticks()
     return SDL_GetTicks();
 }
 
-static unsigned long tile_colors[] = {
+static u32 tile_colors[] = {
     COLOR0,
     COLOR1,
     COLOR2,
