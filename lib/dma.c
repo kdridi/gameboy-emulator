@@ -31,7 +31,7 @@ void dma_tick()
         return;
     }
 
-    ppu_oam_write(ctx.byte, bus_read((ctx.value * 0x100) + ctx.byte));
+    ppu_oam_write(ctx.byte | ADDR_OAM_START, bus_read((ctx.value * 0x100) + ctx.byte));
 
     ctx.byte++;
     ctx.active = ctx.byte < 0xA0; // 160 bytes

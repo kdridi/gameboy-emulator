@@ -58,12 +58,12 @@ u8 bus_read(u16 address)
     if (BETWEEN(address, 0xE000, 0xFDFF))
         return 0;
 
-    assert(address >= 0xFE00);
-    if (BETWEEN(address, 0xFE00, 0xFE9F) && dma_transfering())
+    assert(address >= ADDR_OAM_START);
+    if (BETWEEN(address, ADDR_OAM_START, ADDR_OAM_END) && dma_transfering())
         return 0xFF;
 
-    assert(address >= 0xFE00);
-    if (BETWEEN(address, 0xFE00, 0xFE9F))
+    assert(address >= ADDR_OAM_START);
+    if (BETWEEN(address, ADDR_OAM_START, ADDR_OAM_END))
         return ppu_oam_read(address);
 
     assert(address >= 0xFEA0);
@@ -105,12 +105,12 @@ void bus_write(u16 address, u8 value)
     if (BETWEEN(address, 0xE000, 0xFDFF))
         return;
 
-    assert(address >= 0xFE00);
-    if (BETWEEN(address, 0xFE00, 0xFE9F) && dma_transfering())
+    assert(address >= ADDR_OAM_START);
+    if (BETWEEN(address, ADDR_OAM_START, ADDR_OAM_END) && dma_transfering())
         return;
 
-    assert(address >= 0xFE00);
-    if (BETWEEN(address, 0xFE00, 0xFE9F))
+    assert(address >= ADDR_OAM_START);
+    if (BETWEEN(address, ADDR_OAM_START, ADDR_OAM_END))
         return ppu_oam_write(address, value);
 
     assert(address >= 0xFEA0);

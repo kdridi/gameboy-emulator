@@ -13,13 +13,14 @@ void ppu_tick(void)
 static u8 *ppu_addr(char *type, u16 address, u16 start, u16 end, u8 *base, size_t block_size)
 {
     if (BETWEEN(address, start, end))
-        address -= start;
-    return base + address;
+        return base + (address - start);
+
+    NO_IMPL(NULL);
 }
 
 static u8 *ppu_oam_addr(u16 address)
 {
-    return ppu_addr("ppu_oam", address, 0xFE00, 0xFEA0, (u8 *)ctx.oam_ram, sizeof(*ctx.oam_ram));
+    return ppu_addr("ppu_oam", address, ADDR_OAM_START, ADDR_OAM_END, (u8 *)ctx.oam_ram, sizeof(*ctx.oam_ram));
 }
 
 void ppu_oam_write(u16 address, u8 value)
