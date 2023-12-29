@@ -31,29 +31,14 @@ void ppu_mode_xfer(void)
         LCDS_MODE_SET(MODE_HBLANK);
 }
 
-void ppu_mode_vblank(void)
-{
-    if (ppu_get_context()->line_ticks >= 80 + 172 + 204) // TICKS_PER_LINE = 80 + 172 + 204 = 456
-    {
-        increment_ly();
-        if (lcd_get_context()->ly >= LINES_PER_FRAME)
-        {
-            LCDS_MODE_SET(MODE_OAM);
-            lcd_get_context()->ly = 0;
-        }
-
-        ppu_get_context()->line_ticks = 0;
-    }
-}
-
-static u32 target_frame_time = 1000 / 60;
-static long prev_frame_time = 0;
-static long start_timer = 0;
-static long frame_count = 0;
-
 void ppu_mode_hblank(void)
 {
-    if (ppu_get_context()->line_ticks >= TICKS_PER_LINE)
+    static u32 target_frame_time = 15;
+    static long prev_frame_time = 0;
+    static long start_timer = 0;
+    static long frame_count = 0;
+
+    if (ppu_get_context()->line_ticks >= 80 + 172 + 204) // TICKS_PER_LINE = 80 + 172 + 204 = 456
     {
         increment_ly();
         if (lcd_get_context()->ly >= YRES)
@@ -81,10 +66,28 @@ void ppu_mode_hblank(void)
 
                 printf("FPS: %u\n", fps);
             }
+
+            frame_count++;
+            prev_frame_time = get_ticks();
         }
         else
         {
             LCDS_MODE_SET(MODE_OAM);
+        }
+
+        ppu_get_context()->line_ticks = 0;
+    }
+}
+
+void ppu_mode_vblank(void)
+{
+    if (ppu_get_context()->line_ticks >= 80 + 172 + 204) // TICKS_PER_LINE = 80 + 172 + 204 = 456
+    {
+        increment_ly();
+        if (lcd_get_context()->ly >= LINES_PER_FRAME)
+        {
+            LCDS_MODE_SET(MODE_OAM);
+            lcd_get_context()->ly = 0;
         }
 
         ppu_get_context()->line_ticks = 0;

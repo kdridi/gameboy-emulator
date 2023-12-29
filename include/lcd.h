@@ -9,7 +9,7 @@ typedef struct
     u8 scroll_y;       // Scroll Y
     u8 scroll_x;       // Scroll X
     u8 ly;             // LCD Y-Coordinate
-    u8 ly_compare;     // LY Compare
+    u8 ly_compare;     // LY Compare : this is the value that LY is compared to, when LY == LYC, the LYC=LY STAT interrupt is requested. It is useful for raster effects and scrolling.
     u8 dma;            // DMA Transfer and Start Address
     u8 bg_palette;     // BG Palette Data
     u8 obj_palette[2]; // Object Palette Data
@@ -48,10 +48,10 @@ typedef enum
 
 typedef enum
 {
-    SS_HBLANK = (1 << 3),
-    SS_VBLANK = (1 << 4),
-    SS_OAM = (1 << 5),
-    SS_LYC = (1 << 6),
+    SS_HBLANK = (1 << 3), // This bit is set when the LCD controller is in the H-Blank period (LCDSTAT Mode 0)
+    SS_VBLANK = (1 << 4), // This bit is set when the LCD controller is in the V-Blank period (LCDSTAT Mode 1)
+    SS_OAM = (1 << 5),    // This bit is set when the LCD controller is reading from OAM memory. The OAM is 160 bytes starting at 0xFE00.
+    SS_LYC = (1 << 6),    // This bit is set during LY=LYC coincidence.
 } stat_src;
 
 #define LCDS_STAT_INT(src) (lcd_get_context()->lcds & src)
