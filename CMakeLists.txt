@@ -75,12 +75,17 @@ target_link_libraries(gaboem
 )
 
 add_executable(gaboem_test
-    tests/cart_test.cpp
+    # tests/cart_test.cpp
+    tests/cpu_tests.cpp
+    tests/stack_tests.cpp
 )
 
 target_link_libraries(gaboem_test
     PRIVATE
     gaboem_core
+    $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
+    $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
+    $<IF:$<TARGET_EXISTS:SDL2_ttf::SDL2_ttf>,SDL2_ttf::SDL2_ttf,SDL2_ttf::SDL2_ttf-static>
     GTest::gtest
     GTest::gtest_main
 )
