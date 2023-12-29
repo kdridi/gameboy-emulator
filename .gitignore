@@ -34,3 +34,4 @@
 # Specific files
 build
 .vscode
+.DS_Store
