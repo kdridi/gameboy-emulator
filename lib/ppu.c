@@ -1,13 +1,49 @@
 #include <ppu.h>
+#include <lcd.h>
+#include <ppu_sm.h>
 
 static ppu_context ctx = {0};
 
+ppu_context *ppu_get_context(void)
+{
+    return &ctx;
+}
+
 void ppu_init(void)
 {
+    ctx.current_frame = 0;
+    ctx.line_ticks = 0;
+    ctx.video_buffer = calloc(XRES * YRES, sizeof(u32));
+
+    lcd_init();
+    LCDS_MODE_SET(MODE_OAM);
+
+    memset(ctx.oam_ram, 0, sizeof(ctx.oam_ram));
+    memset(ctx.vram, 0, sizeof(ctx.vram));
+    memset(ctx.video_buffer, 0, YRES * XRES * sizeof(u32));
 }
 
 void ppu_tick(void)
 {
+    ctx.line_ticks++;
+
+    switch (LCDS_MODE)
+    {
+    case MODE_OAM:
+        ppu_mode_oam();
+        break;
+    case MODE_XFER:
+        ppu_mode_xfer();
+        break;
+    case MODE_VBLANK:
+        ppu_mode_vblank();
+        break;
+    case MODE_HBLANK:
+        ppu_mode_hblank();
+        break;
+    default:
+        NO_IMPL();
+    }
 }
 
 static u8 *ppu_addr(char *type, u16 address, u16 start, u16 end, u8 *base, size_t block_size)

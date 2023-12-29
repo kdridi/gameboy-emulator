@@ -2,6 +2,11 @@
 
 #include <common.h>
 
+#define LINES_PER_FRAME 154
+#define TICKS_PER_LINE 456
+#define YRES 144
+#define XRES 160
+
 typedef struct
 {
     u8 x, y, tile;
@@ -18,6 +23,10 @@ typedef struct
 {
     oam_entry oam_ram[40];
     u8 vram[0x2000];
+
+    u32 current_frame;
+    u32 line_ticks;
+    u32 *video_buffer;
 } ppu_context;
 
 #ifdef __cplusplus
@@ -33,6 +42,8 @@ extern "C"
 
     void ppu_vram_write(u16 address, u8 value);
     u8 ppu_vram_read(u16 address);
+
+    ppu_context *ppu_get_context(void);
 
 #ifdef __cplusplus
 }

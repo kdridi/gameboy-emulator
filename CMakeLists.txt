@@ -40,6 +40,10 @@ add_library(gaboem_core STATIC
     lib/interrupts.c
     include/io.h
     lib/io.c
+    include/lcd.h
+    lib/lcd.c
+    include/ppu_sm.h
+    lib/ppu_sm.c
     include/ppu.h
     lib/ppu.c
     include/ram.h

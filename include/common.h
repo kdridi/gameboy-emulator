@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 768
@@ -32,6 +33,9 @@
 
 #define ADDR_OAM_START 0xFE00
 #define ADDR_OAM_END 0xFE9F
+
+#define ADDR_LCD_START 0xFF40
+#define ADDR_LCD_END 0xFF4B
 
 #define COLOR0 0xFF9BBC0F
 #define COLOR1 0xFF8BAC0F
@@ -72,6 +76,7 @@ extern "C"
 #endif
 
     void delay(u32 ms);
+    u32 get_ticks();
 
 #ifdef __cplusplus
 }

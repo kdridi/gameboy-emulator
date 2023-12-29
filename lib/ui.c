@@ -22,6 +22,11 @@ void delay(u32 ms)
     SDL_Delay(ms);
 }
 
+u32 get_ticks()
+{
+    return SDL_GetTicks();
+}
+
 static unsigned long tile_colors[] = {
     0xFF9BBC0F,
     0xFF8BAC0F,
