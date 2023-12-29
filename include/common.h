@@ -8,12 +8,18 @@
 #include <unistd.h>
 #include <string.h>
 
-#define SCREEN_WIDTH 1024
-#define SCREEN_HEIGHT 768
+#define LINES_PER_FRAME 154
+#define TICKS_PER_LINE 456
 
-#define DEBUG_SCALE 4
+#define YRES 144
+#define XRES 160
+
+#define DEBUG_SCALE 6
 #define DEBUG_SCREEN_WIDTH (16 * 8 * DEBUG_SCALE)
 #define DEBUG_SCREEN_HEIGHT (32 * 8 * DEBUG_SCALE)
+
+#define SCREEN_WIDTH (XRES * DEBUG_SCALE)
+#define SCREEN_HEIGHT (YRES * DEBUG_SCALE)
 
 #define SERIAL_TRANSFER_DATA 0xFF01
 #define SERIAL_TRANSFER_CONTROL 0xFF02

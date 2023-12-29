@@ -42,6 +42,8 @@ add_library(gaboem_core STATIC
     lib/io.c
     include/lcd.h
     lib/lcd.c
+    include/ppu_pipeline.h
+    lib/ppu_pipeline.c
     include/ppu_sm.h
     lib/ppu_sm.c
     include/ppu.h

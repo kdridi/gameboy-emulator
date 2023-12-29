@@ -2,6 +2,8 @@
 
 #include <common.h>
 
+#define TIMER (timer_get_context())
+
 typedef struct
 {
     u16 div; // $FF04 - Divider Register (R/W)

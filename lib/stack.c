@@ -4,8 +4,8 @@
 
 void stack_push(u8 data)
 {
-    cpu_get_registers()->sp--;
-    bus_write(cpu_get_registers()->sp, data);
+    REGS->sp--;
+    bus_write(REGS->sp, data);
 }
 
 void stack_push16(u16 data)
@@ -16,14 +16,14 @@ void stack_push16(u16 data)
 
 u8 stack_pop()
 {
-    u8 data = bus_read(cpu_get_registers()->sp);
-    cpu_get_registers()->sp++;
+    u8 data = bus_read(REGS->sp);
+    REGS->sp++;
     return data;
 }
 
 u16 stack_pop16()
 {
-    u8 lo = stack_pop();
-    u8 hi = stack_pop();
-    return (hi << 8) | (lo << 0);
+    u16 lo = stack_pop() << 0;
+    u16 hi = stack_pop() << 8;
+    return hi | lo;
 }

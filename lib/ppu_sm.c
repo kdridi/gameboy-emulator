@@ -2,11 +2,12 @@
 #include <ppu.h>
 #include <lcd.h>
 #include <interrupts.h>
+#include <ppu_pipeline.h>
 
 static void increment_ly(void)
 {
-    lcd_get_context()->ly++;
-    if (lcd_get_context()->ly == lcd_get_context()->ly_compare)
+    LCD->ly++;
+    if (LCD->ly == LCD->ly_compare)
     {
         LCDS_LYC_SET(1);
 
@@ -21,14 +22,29 @@ static void increment_ly(void)
 
 void ppu_mode_oam(void)
 {
-    if (ppu_get_context()->line_ticks >= 80)
+    if (PPU->line_ticks >= 80)
+    {
         LCDS_MODE_SET(MODE_XFER);
+
+        PFC->cur_fetch_state = FS_TILE;
+        PFC->line_x = 0;
+        PFC->fetch_x = 0;
+        PFC->pushed_x = 0;
+        PFC->fifo_x = 0;
+    }
 }
 
 void ppu_mode_xfer(void)
 {
-    if (ppu_get_context()->line_ticks >= 80 + 172)
+    pipeline_process();
+    if (PFC->pushed_x >= XRES)
+    {
+        pipeline_fifo_reset();
         LCDS_MODE_SET(MODE_HBLANK);
+
+        if (LCDS_STAT_INT(SS_HBLANK))
+            cpu_request_interrupt(IT_LCD_STAT);
+    }
 }
 
 void ppu_mode_hblank(void)
@@ -38,10 +54,10 @@ void ppu_mode_hblank(void)
     static long start_timer = 0;
     static long frame_count = 0;
 
-    if (ppu_get_context()->line_ticks >= 80 + 172 + 204) // TICKS_PER_LINE = 80 + 172 + 204 = 456
+    if (PPU->line_ticks >= 80 + 172 + 204) // TICKS_PER_LINE = 80 + 172 + 204 = 456
     {
         increment_ly();
-        if (lcd_get_context()->ly >= YRES)
+        if (LCD->ly >= YRES)
         {
             LCDS_MODE_SET(MODE_VBLANK);
             cpu_request_interrupt(IT_VBLANK);
@@ -49,7 +65,7 @@ void ppu_mode_hblank(void)
             if (LCDS_STAT_INT(SS_VBLANK))
                 cpu_request_interrupt(IT_LCD_STAT);
 
-            ppu_get_context()->current_frame++;
+            PPU->current_frame++;
 
             // calc FPS
             long end = get_ticks();
@@ -75,21 +91,21 @@ void ppu_mode_hblank(void)
             LCDS_MODE_SET(MODE_OAM);
         }
 
-        ppu_get_context()->line_ticks = 0;
+        PPU->line_ticks = 0;
     }
 }
 
 void ppu_mode_vblank(void)
 {
-    if (ppu_get_context()->line_ticks >= 80 + 172 + 204) // TICKS_PER_LINE = 80 + 172 + 204 = 456
+    if (PPU->line_ticks >= 80 + 172 + 204) // TICKS_PER_LINE = 80 + 172 + 204 = 456
     {
         increment_ly();
-        if (lcd_get_context()->ly >= LINES_PER_FRAME)
+        if (LCD->ly >= LINES_PER_FRAME)
         {
             LCDS_MODE_SET(MODE_OAM);
-            lcd_get_context()->ly = 0;
+            LCD->ly = 0;
         }
 
-        ppu_get_context()->line_ticks = 0;
+        PPU->line_ticks = 0;
     }
 }

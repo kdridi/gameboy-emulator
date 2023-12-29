@@ -40,7 +40,7 @@ void *cpu_run(void *data)
             continue;
         }
 
-        if (emu_get_context()->ticks >= 0x000201E0)
+        if (ctx.ticks >= 0x000201E0)
         {
             // printf("BREAK\n");
         }
@@ -89,9 +89,9 @@ int emu_run(int argc, char **argv)
         usleep(1000);
         ui_handle_events();
 
-        if (prev_frame != ppu_get_context()->current_frame)
+        if (prev_frame != PPU->current_frame)
         {
-            prev_frame = ppu_get_context()->current_frame;
+            prev_frame = PPU->current_frame;
             ui_update();
         }
     }

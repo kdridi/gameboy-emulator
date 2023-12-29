@@ -2,10 +2,47 @@
 
 #include <common.h>
 
-#define LINES_PER_FRAME 154
-#define TICKS_PER_LINE 456
-#define YRES 144
-#define XRES 160
+#define PPU (ppu_get_context())
+#define PFC (&((PPU)->pfc))
+#define PIXEL_FIFO (&((PFC)->pixel_fifo))
+#define VIDEO_BUFFER ((PPU)->video_buffer)
+
+typedef enum
+{
+    FS_TILE,
+    FS_DATA0,
+    FS_DATA1,
+    FS_IDLE,
+    FS_PUSH,
+} fetch_state;
+
+typedef struct _fifo_entry
+{
+    struct _fifo_entry *next;
+    u32 value; // 32 bit color value
+} fifo_entry;
+
+typedef struct
+{
+    fifo_entry *head;
+    fifo_entry *tail;
+    u32 size;
+} fifo;
+
+typedef struct
+{
+    fetch_state cur_fetch_state;
+    fifo pixel_fifo;
+    u8 line_x;
+    u8 pushed_x;
+    u8 fetch_x;
+    u8 bgw_fetch_data[3];
+    u8 fetch_entry_data[6]; // oam data...
+    u8 map_y;
+    u8 map_x;
+    u8 tile_y;
+    u8 fifo_x;
+} pixel_fifo_context;
 
 typedef struct
 {
@@ -23,6 +60,8 @@ typedef struct
 {
     oam_entry oam_ram[40];
     u8 vram[0x2000];
+
+    pixel_fifo_context pfc;
 
     u32 current_frame;
     u32 line_ticks;

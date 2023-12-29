@@ -16,12 +16,10 @@ typedef struct
     u8 win_y;          // Window Y Position
     u8 win_x;          // Window X Position
 
-    u8 bg_colors[4];  // Background Color Palette
-    u8 sp1_colors[4]; // Sprite 1 Color Palette
-    u8 sp2_colors[4]; // Sprite 2 Color Palette
+    u32 bg_colors[4];  // Background Color Palette
+    u32 sp1_colors[4]; // Sprite 1 Color Palette
+    u32 sp2_colors[4]; // Sprite 2 Color Palette
 } lcd_context;
-
-lcd_context *lcd_get_context(void);
 
 typedef enum
 {
@@ -31,20 +29,26 @@ typedef enum
     MODE_XFER,   //  172 clocks -   43 cycles -  2 scanlines : When the LCD controller is in mode 3, the CPU cannot access OAM (FE00h-FE9Fh) or VRAM (8000h-9FFFh)
 } lcd_mode;
 
-#define LCDC_BGW_ENABLE ((BIT(lcd_get_context()->lcdc, 0) == 1) : true : false)
-#define LCDC_OBJ_ENABLE ((BIT(lcd_get_context()->lcdc, 1) == 1) : true : false)
-#define LCDC_OBJ_HEIGHT ((BIT(lcd_get_context()->lcdc, 2) == 1) : 16 : 8)
-#define LCDC_BG_MAP_AREA ((BIT(lcd_get_context()->lcdc, 3) == 1) : 0x9C00 : 0x9800)
-#define LCDC_BGW_DATA_AREA ((BIT(lcd_get_context()->lcdc, 4) == 1) : 0x8000 : 0x8800)
-#define LCDC_WIN_ENABLE ((BIT(lcd_get_context()->lcdc, 5) == 1) : true : false)
-#define LCDC_WIN_MAP_AREA ((BIT(lcd_get_context()->lcdc, 6) == 1) : 0x9C00 : 0x9800)
-#define LCDC_LCD_ENABLE ((BIT(lcd_get_context()->lcdc, 7) == 1) : true : false)
+// clang-format off
+#define LCD                 (lcd_get_context())
 
-#define LCDS_MODE ((lcd_mode)(lcd_get_context()->lcds & 0b11))
-#define LCDS_MODE_SET(mode) (lcd_get_context()->lcds = (lcd_get_context()->lcds & 0b11111100) | mode)
+#define LCDC                (LCD->lcdc)
+#define LCDC_BGW_ENABLE     ((BIT(LCDC, 0) == 1) ? true : false)
+#define LCDC_OBJ_ENABLE     ((BIT(LCDC, 1) == 1) ? true : false)
+#define LCDC_OBJ_HEIGHT     ((BIT(LCDC, 2) == 1) ? 16 : 8)
+#define LCDC_BG_MAP_AREA    ((BIT(LCDC, 3) == 1) ? 0x9C00 : 0x9800)
+#define LCDC_BGW_DATA_AREA  ((BIT(LCDC, 4) == 1) ? 0x8000 : 0x8800)
+#define LCDC_WIN_ENABLE     ((BIT(LCDC, 5) == 1) ? true : false)
+#define LCDC_WIN_MAP_AREA   ((BIT(LCDC, 6) == 1) ? 0x9C00 : 0x9800)
+#define LCDC_LCD_ENABLE     ((BIT(LCDC, 7) == 1) ? true : false)
 
-#define LCDS_LYC ((BIT(lcd_get_context()->lcds, 2) == 1) : true : false)
-#define LCDS_LYC_SET(b) BIT_SET(lcd_get_context()->lcds, 2, b)
+#define LCDS                (LCD->lcds)
+#define LCDS_MODE           ((lcd_mode)(LCDS & 0b11))
+#define LCDS_MODE_SET(mode) (LCDS = (LCDS & 0b11111100) | mode)
+#define LCDS_LYC            ((BIT(LCDS, 2) == 1) : true : false)
+#define LCDS_LYC_SET(b)     BIT_SET(LCDS, 2, b)
+#define LCDS_STAT_INT(src)  (LCDS & src)
+// clang-format on
 
 typedef enum
 {
@@ -54,14 +58,13 @@ typedef enum
     SS_LYC = (1 << 6),    // This bit is set during LY=LYC coincidence.
 } stat_src;
 
-#define LCDS_STAT_INT(src) (lcd_get_context()->lcds & src)
-
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
     void lcd_init(void);
+    lcd_context *lcd_get_context(void);
 
     void lcd_write(u16 addr, u8 value);
     u8 lcd_read(u16 addr);

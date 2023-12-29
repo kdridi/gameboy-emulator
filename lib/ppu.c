@@ -11,21 +11,30 @@ ppu_context *ppu_get_context(void)
 
 void ppu_init(void)
 {
-    ctx.current_frame = 0;
-    ctx.line_ticks = 0;
-    ctx.video_buffer = calloc(XRES * YRES, sizeof(u32));
+    PPU->current_frame = 0;
+    PPU->line_ticks = 0;
+
+    VIDEO_BUFFER = calloc(XRES * YRES, sizeof(u32));
+
+    PFC->line_x = 0;
+    PFC->pushed_x = 0;
+    PFC->fetch_x = 0;
+    PFC->pixel_fifo.size = 0;
+    PFC->pixel_fifo.head = NULL;
+    PFC->pixel_fifo.tail = NULL;
+    PFC->cur_fetch_state = FS_TILE;
 
     lcd_init();
     LCDS_MODE_SET(MODE_OAM);
 
-    memset(ctx.oam_ram, 0, sizeof(ctx.oam_ram));
-    memset(ctx.vram, 0, sizeof(ctx.vram));
-    memset(ctx.video_buffer, 0, YRES * XRES * sizeof(u32));
+    memset(PPU->oam_ram, 0, sizeof(PPU->oam_ram));
+    memset(PPU->vram, 0, sizeof(PPU->vram));
+    memset(VIDEO_BUFFER, 0, YRES * XRES * sizeof(u32));
 }
 
 void ppu_tick(void)
 {
-    ctx.line_ticks++;
+    PPU->line_ticks++;
 
     switch (LCDS_MODE)
     {
@@ -56,7 +65,7 @@ static u8 *ppu_addr(char *type, u16 address, u16 start, u16 end, u8 *base, size_
 
 static u8 *ppu_oam_addr(u16 address)
 {
-    return ppu_addr("ppu_oam", address, ADDR_OAM_START, ADDR_OAM_END, (u8 *)ctx.oam_ram, sizeof(*ctx.oam_ram));
+    return ppu_addr("ppu_oam", address, ADDR_OAM_START, ADDR_OAM_END, (u8 *)PPU->oam_ram, sizeof(*PPU->oam_ram));
 }
 
 void ppu_oam_write(u16 address, u8 value)
@@ -73,7 +82,7 @@ u8 ppu_oam_read(u16 address)
 
 static u8 *ppu_vram_addr(u16 address)
 {
-    return ppu_addr("ppu_vram", address, ADDR_VRAM_START, ADDR_VRAM_END, (u8 *)ctx.vram, sizeof(*ctx.vram));
+    return ppu_addr("ppu_vram", address, ADDR_VRAM_START, ADDR_VRAM_END, (u8 *)PPU->vram, sizeof(*PPU->vram));
 }
 
 void ppu_vram_write(u16 address, u8 value)

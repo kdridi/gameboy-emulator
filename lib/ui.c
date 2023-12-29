@@ -1,6 +1,7 @@
 #include <ui.h>
 #include <emu.h>
 #include <bus.h>
+#include <ppu.h>
 
 #include <stdio.h>
 
@@ -28,10 +29,10 @@ u32 get_ticks()
 }
 
 static unsigned long tile_colors[] = {
-    0xFF9BBC0F,
-    0xFF8BAC0F,
-    0xFF306230,
-    0xFF0F380F,
+    COLOR0,
+    COLOR1,
+    COLOR2,
+    COLOR3,
 };
 
 void display_tile(SDL_Surface *surface, u16 startLocation, u16 tileNum, int x, int y)
@@ -102,6 +103,27 @@ void update_debug_window()
 
 void ui_update()
 {
+    int status = 0;
+
+    SDL_Rect rc;
+    rc.x = rc.y = 0;
+    rc.h = rc.w = DEBUG_SCALE;
+
+    for (int y = 0; y < YRES; y++, rc.y += DEBUG_SCALE, rc.x = 0)
+        for (int x = 0; x < XRES; x++, rc.x += DEBUG_SCALE)
+            SDL_FillRect(screen, &rc, VIDEO_BUFFER[y * XRES + x]);
+
+    status = SDL_UpdateTexture(sdlTexture, NULL, screen->pixels, screen->pitch);
+    assert(status == 0);
+
+    status = SDL_RenderClear(sdlRenderer);
+    assert(status == 0);
+
+    status = SDL_RenderCopy(sdlRenderer, sdlTexture, NULL, NULL);
+    assert(status == 0);
+
+    SDL_RenderPresent(sdlRenderer);
+
     update_debug_window();
 }
 
@@ -119,6 +141,19 @@ void ui_init(void)
 
     status = SDL_CreateWindowAndRenderer(SCREEN_WIDTH, SCREEN_HEIGHT, 0, &sdlWindow, &sdlRenderer);
     assert(status == 0);
+
+    screen = SDL_CreateRGBSurface(0, SCREEN_WIDTH, SCREEN_HEIGHT, 32,
+                                  0x00FF0000,
+                                  0x0000FF00,
+                                  0x000000FF,
+                                  0xFF000000);
+    assert(screen != NULL);
+
+    sdlTexture = SDL_CreateTexture(sdlRenderer,
+                                   SDL_PIXELFORMAT_ARGB8888,
+                                   SDL_TEXTUREACCESS_STREAMING,
+                                   SCREEN_WIDTH, SCREEN_HEIGHT);
+    assert(sdlTexture != NULL);
 
     status = SDL_CreateWindowAndRenderer(DEBUG_SCREEN_WIDTH, DEBUG_SCREEN_HEIGHT, 0, &sdlDebugWindow, &sdlDebugRenderer);
     assert(status == 0);
@@ -151,9 +186,9 @@ void ui_handle_events(void)
     while (SDL_PollEvent(&event) > 0)
     {
         if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE)
-            emu_get_context()->die = true;
+            EMU->die = true;
 
         if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)
-            emu_get_context()->die = true;
+            EMU->die = true;
     }
 }

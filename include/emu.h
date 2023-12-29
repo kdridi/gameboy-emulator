@@ -2,6 +2,8 @@
 
 #include <common.h>
 
+#define EMU (emu_get_context())
+
 typedef struct
 {
     bool paused;

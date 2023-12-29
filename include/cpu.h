@@ -3,6 +3,8 @@
 #include <common.h>
 #include <instruction.h>
 
+#define REGS (cpu_get_registers())
+
 typedef struct
 {
     u8 a, f, b, c, d, e, h, l;
