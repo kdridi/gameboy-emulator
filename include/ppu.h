@@ -19,7 +19,7 @@ typedef enum
 typedef struct _fifo_entry
 {
     struct _fifo_entry *next;
-    u32 value; // 32 bit color value
+    u32 value; // 32 bit color value.
 } fifo_entry;
 
 typedef struct
@@ -37,7 +37,7 @@ typedef struct
     u8 pushed_x;
     u8 fetch_x;
     u8 bgw_fetch_data[3];
-    u8 fetch_entry_data[6]; // oam data...
+    u8 fetch_entry_data[6]; // oam data..
     u8 map_y;
     u8 map_x;
     u8 tile_y;
@@ -46,15 +46,23 @@ typedef struct
 
 typedef struct
 {
-    u8 x, y, tile;
+    u8 y;
+    u8 x;
+    u8 tile;
 
-    unsigned f_cgb_pn : 3;        // Palette number **CGB Mode Only** (OBP0-7)
-    unsigned f_cgb_vram_bank : 1; // Tile VRAM Bank **CGB Mode Only** (0=Bank 0, 1=Bank 1)
-    unsigned f_pn : 1;            // Palette number **DMG Mode Only** (0=OBP0, 1=OBP1)
-    unsigned f_x_flip : 1;        // Flip horizontally (0=Normal, 1=Mirror horizontally)
-    unsigned f_y_flip : 1;        // Flip vertically (0=Normal, 1=Mirror vertically)
-    unsigned f_bgp : 1;           // Background and window over OBJ (0=No, 1=BG and Window colors 1-3 over the OBJ)
+    u8 f_cgb_pn : 3;        // Palette number **CGB Mode Only** (OBP0-7)
+    u8 f_cgb_vram_bank : 1; // Tile VRAM Bank **CGB Mode Only** (0=Bank 0, 1=Bank 1)
+    u8 f_pn : 1;            // Palette number **DMG Mode Only** (0=OBP0, 1=OBP1)
+    u8 f_x_flip : 1;        // Flip horizontally (0=Normal, 1=Mirror horizontally)
+    u8 f_y_flip : 1;        // Flip vertically (0=Normal, 1=Mirror vertically)
+    u8 f_bgp : 1;           // Background and window over OBJ (0=No, 1=BG and Window colors 1-3 over the OBJ)
 } oam_entry;
+
+typedef struct _oam_line_entry
+{
+    oam_entry entry;
+    struct _oam_line_entry *next;
+} oam_line_entry;
 
 typedef struct
 {
@@ -62,6 +70,13 @@ typedef struct
     u8 vram[0x2000];
 
     pixel_fifo_context pfc;
+
+    u8 line_sprite_count;                // 0 to 10 sprites.
+    oam_line_entry *line_sprites;        // linked list of current sprites on line.
+    oam_line_entry line_entry_array[10]; // memory to use for list.
+
+    u8 fetched_entry_count;
+    oam_entry fetched_entries[3]; // entries fetched during pipeline.
 
     u32 current_frame;
     u32 line_ticks;

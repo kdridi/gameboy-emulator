@@ -27,9 +27,17 @@ void lcd_init(void)
     }
 }
 
-lcd_context *lcd_get_context(void)
+lcd_context *lcd_get_context()
 {
     return &ctx;
+}
+
+u8 lcd_read(u16 address)
+{
+    u8 offset = (address - ADDR_LCD_START);
+    u8 *p = (u8 *)&ctx;
+
+    return p[offset];
 }
 
 static void update_palette(u8 palette_data, u8 pal)
@@ -52,26 +60,19 @@ static void update_palette(u8 palette_data, u8 pal)
     p_colors[3] = colors_default[(palette_data >> 6) & 0b11];
 }
 
-void lcd_write(u16 addr, u8 value)
+void lcd_write(u16 address, u8 value)
 {
-    u8 offset = (addr - ADDR_LCD_START);
+    u8 offset = (address - ADDR_LCD_START);
     u8 *p = (u8 *)&ctx;
     p[offset] = value;
 
     if (offset == 6)
         dma_start(value);
 
-    if (addr == 0xFF47)
+    if (address == 0xFF47)
         update_palette(value, 0);
-    else if (addr == 0xFF48)
+    else if (address == 0xFF48)
         update_palette(value & 0b11111100, 1);
-    else if (addr == 0xFF49)
-        update_palette(value & 0b11111100, 1);
-}
-
-u8 lcd_read(u16 addr)
-{
-    u8 offset = (addr - ADDR_LCD_START);
-    u8 *p = (u8 *)&ctx;
-    return p[offset];
+    else if (address == 0xFF49)
+        update_palette(value & 0b11111100, 2);
 }
