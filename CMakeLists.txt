@@ -30,6 +30,8 @@ add_library(gaboem_core STATIC
     lib/cpu.c
     include/dbg.h
     lib/dbg.c
+    include/dma.h
+    lib/dma.c
     include/emu.h
     lib/emu.c
     include/instruction.h

@@ -7,9 +7,10 @@ extern "C"
 {
 #endif
 
-    void ui_init(void);
-    void ui_handle_events(void);
-    void ui_update(void);
+    void dma_start(u8 start);
+    void dma_tick();
+
+    bool dma_transfering();
 
 #ifdef __cplusplus
 }

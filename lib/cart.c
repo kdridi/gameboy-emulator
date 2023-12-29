@@ -148,12 +148,12 @@ bool cart_load(const char *cart)
     ctx.header->title[15] = '\0';
 
     printf("Cartridge Loaded:\n");
-    printf("\t Title        : %s\n", ctx.header->title);
-    printf("\t Type         : %2.2X (%s)\n", ctx.header->type, cart_type_name());
-    printf("\t ROM Size     : %d KB\n", 32 << ctx.header->rom_size);
-    printf("\t RAM Size     : %2.2X\n", ctx.header->ram_size);
-    printf("\t License Code : %2.2X (%s)\n", ctx.header->lic_code, cart_lic_name());
-    printf("\t ROM Version  : %2.2X\n", ctx.header->version);
+    printf("\t Title    : %s\n", ctx.header->title);
+    printf("\t Type     : %2.2X (%s)\n", ctx.header->type, cart_type_name());
+    printf("\t ROM Size : %d KB\n", 32 << ctx.header->rom_size);
+    printf("\t RAM Size : %2.2X\n", ctx.header->ram_size);
+    printf("\t LIC Code : %2.2X (%s)\n", ctx.header->lic_code, cart_lic_name());
+    printf("\t ROM Vers : %2.2X\n", ctx.header->version);
 
     // Calculate checksum using the same algorithm as the bootrom
     // Here's the detailled algorithm: https://gbdev.io/pandocs/#0104-rom-header
@@ -161,7 +161,7 @@ bool cart_load(const char *cart)
     for (u16 i = 0x0134; i <= 0x014C; i++)
         x = x - ctx.rom_data[i] - 1;
 
-    printf("\t Checksum     : %2.2X (%s)\n", ctx.header->checksum, x & 0xFF ? "PASSED" : "FAILED");
+    printf("\t Checksum : %2.2X (%s)\n", ctx.header->checksum, (x & 0xFF) ? "PASSED" : "FAILED");
 
     return true;
 }
@@ -173,6 +173,6 @@ u8 cart_read(u16 address)
 
 void cart_write(u16 address, u8 value)
 {
-    printf("UNSUPPORTED cart_write at address 0x%04X\n", address);
+    printf("cart_write(%04X)\n", address);
     // NO_IMPL();
 }
