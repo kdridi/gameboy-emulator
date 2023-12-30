@@ -27,6 +27,10 @@ u8 io_read(u16 address)
     if (address == INTERRUPT_FLAG)
         return cpu_get_int_flags();
 
+    // ignore sound
+    if (BETWEEN(address, 0xFF10, 0xFF3F))
+        return 0;
+
     printf("UNSUPPORTED bus_read(%04X)\n", address);
     return 0;
 }
@@ -66,6 +70,12 @@ void io_write(u16 address, u8 value)
     if (address == INTERRUPT_FLAG)
     {
         cpu_set_int_flags(value);
+        return;
+    }
+
+    // ignore sound
+    if (BETWEEN(address, 0xFF10, 0xFF3F))
+    {
         return;
     }
 

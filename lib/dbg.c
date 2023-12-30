@@ -4,7 +4,7 @@
 static char dbg_message[1024] = {0};
 static u64 dbg_size = 0;
 
-void dbg_update()
+void dbg_update(void)
 {
     if (bus_read(SERIAL_TRANSFER_CONTROL) == 0x81)
     {
@@ -15,7 +15,7 @@ void dbg_update()
     }
 }
 
-void dbg_print()
+void dbg_print(void)
 {
     if (dbg_size > 0)
     {

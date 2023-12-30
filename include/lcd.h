@@ -46,8 +46,8 @@ typedef enum
 #define LCDC_WIN_MAP_AREA_READ_AT(at_x, at_y) LCDC_WIN_MAP_AREA_READ((at_x) >> 3, (at_y) >> 3)
 
 #define LCDS                (LCD->lcds)
-#define LCDS_MODE           ((lcd_mode)(LCDS & 0b11))
-#define LCDS_MODE_SET(mode) (LCDS = (LCDS & 0b11111100) | mode)
+#define LCDS_MODE           ((lcd_mode)(LCDS & 0x3))
+#define LCDS_MODE_SET(mode) (LCDS = (LCDS & 0xFC) | mode)
 #define LCDS_LYC            ((BIT(LCDS, 2) == 1) : true : false)
 #define LCDS_LYC_SET(b)     BIT_SET(LCDS, 2, b)
 #define LCDS_STAT_INT(src)  (LCDS & src)

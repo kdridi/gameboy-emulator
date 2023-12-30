@@ -85,7 +85,7 @@ extern "C"
 #endif
 
     void delay(u32 ms);
-    u32 get_ticks();
+    u32 get_ticks(void);
 
 #ifdef __cplusplus
 }

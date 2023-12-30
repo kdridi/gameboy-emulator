@@ -68,6 +68,7 @@ namespace gaboem::testing
         ASSERT_THAT(m_cpu->regs.c, Eq(0x34));
         ASSERT_THAT(cpu_read_reg(RT_BC), Eq(0x1234));
         ASSERT_THAT(cpu_read_reg(RT_AF), Eq(af));
+        ASSERT_THAT(cpu_read_reg(RT_BC), Ne(bc));
         ASSERT_THAT(cpu_read_reg(RT_DE), Eq(de));
         ASSERT_THAT(cpu_read_reg(RT_HL), Eq(hl));
         ASSERT_THAT(cpu_read_reg(RT_SP), Eq(sp));

@@ -23,18 +23,18 @@ void timer_tick(void)
 
     bool timer_update = false;
 
-    switch (ctx.tac & 0b11)
+    switch (ctx.tac & 0x3)
     {
-    case 0b00:
+    case 0x0:
         timer_update = BIT(prev_div, 9) && !BIT(ctx.div, 9);
         break;
-    case 0b01:
+    case 0x1:
         timer_update = BIT(prev_div, 3) && !BIT(ctx.div, 3);
         break;
-    case 0b10:
+    case 0x2:
         timer_update = BIT(prev_div, 5) && !BIT(ctx.div, 5);
         break;
-    case 0b11:
+    case 0x3:
         timer_update = BIT(prev_div, 7) && !BIT(ctx.div, 7);
         break;
     }

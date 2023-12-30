@@ -2,10 +2,22 @@
 	"version": 3,
 	"configurePresets": [
 		{
+			"name": "llvm",
+			"binaryDir": "${sourceDir}/build/llvm",
+			"cacheVariables": {
+				"CMAKE_C_COMPILER": "$env{LLVM_ROOT}/bin/clang",
+				"CMAKE_CXX_COMPILER": "$env{LLVM_ROOT}/bin/clang++",
+				"CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+				"USE_ASAN": "ON"
+			},
+			"generator": "Unix Makefiles"
+		},
+		{
 			"name": "makefile",
 			"binaryDir": "${sourceDir}/build/makefile",
 			"cacheVariables": {
-				"CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+				"CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+				"USE_ASAN": "OFF"
 			},
 			"generator": "Unix Makefiles"
 		},
@@ -13,7 +25,8 @@
 			"name": "xcode",
 			"binaryDir": "${sourceDir}/build/xcode",
 			"cacheVariables": {
-				"CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+				"CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+				"USE_ASAN": "OFF"
 			},
 			"generator": "Xcode"
 		}

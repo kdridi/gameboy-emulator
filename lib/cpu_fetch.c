@@ -262,90 +262,92 @@ static char *rt_lookup[] = {
     "PC",
 };
 
-void instr_to_str(cpu_context *ctx, char *str)
+const char *instr_to_str(cpu_context *ctx)
 {
+    static char str[16];
     instruction *inst = ctx->current_instruction;
-    sprintf(str, "%s", instruction_name(inst));
+    snprintf(str, sizeof(str), "%s", instruction_name(inst));
 
     switch (inst->mode)
     {
     case AM_NONE:
-        return;
+        return str;
 
     case AM_R_D16:
     case AM_R_A16:
-        sprintf(str, "%s %s,$%04X", instruction_name(inst), rt_lookup[inst->reg_1], ctx->fetched_data);
-        return;
+        snprintf(str, sizeof(str), "%s %s,$%04X", instruction_name(inst), rt_lookup[inst->reg_1], ctx->fetched_data);
+        return str;
+
     case AM_R:
-        sprintf(str, "%s %s", instruction_name(inst), rt_lookup[inst->reg_1]);
-        return;
+        snprintf(str, sizeof(str), "%s %s", instruction_name(inst), rt_lookup[inst->reg_1]);
+        return str;
 
     case AM_R_R:
-        sprintf(str, "%s %s,%s", instruction_name(inst), rt_lookup[inst->reg_1], rt_lookup[inst->reg_2]);
-        return;
+        snprintf(str, sizeof(str), "%s %s,%s", instruction_name(inst), rt_lookup[inst->reg_1], rt_lookup[inst->reg_2]);
+        return str;
 
     case AM_MR_R:
-        sprintf(str, "%s (%s),%s", instruction_name(inst), rt_lookup[inst->reg_1], rt_lookup[inst->reg_2]);
-        return;
+        snprintf(str, sizeof(str), "%s (%s),%s", instruction_name(inst), rt_lookup[inst->reg_1], rt_lookup[inst->reg_2]);
+        return str;
 
     case AM_MR:
-        sprintf(str, "%s (%s)", instruction_name(inst), rt_lookup[inst->reg_1]);
-        return;
+        snprintf(str, sizeof(str), "%s (%s)", instruction_name(inst), rt_lookup[inst->reg_1]);
+        return str;
 
     case AM_R_MR:
-        sprintf(str, "%s %s,(%s)", instruction_name(inst), rt_lookup[inst->reg_1], rt_lookup[inst->reg_2]);
-        return;
+        snprintf(str, sizeof(str), "%s %s,(%s)", instruction_name(inst), rt_lookup[inst->reg_1], rt_lookup[inst->reg_2]);
+        return str;
 
     case AM_R_D8:
-        sprintf(str, "%s %s,$%02X", instruction_name(inst), rt_lookup[inst->reg_1], ctx->fetched_data);
-        return;
+        snprintf(str, sizeof(str), "%s %s,$%02X", instruction_name(inst), rt_lookup[inst->reg_1], ctx->fetched_data);
+        return str;
 
     case AM_R_A8:
-        sprintf(str, "%s %s,$%02X", instruction_name(inst), rt_lookup[inst->reg_1], ctx->fetched_data);
-        return;
+        snprintf(str, sizeof(str), "%s %s,$%02X", instruction_name(inst), rt_lookup[inst->reg_1], ctx->fetched_data);
+        return str;
 
     case AM_R_RI:
-        sprintf(str, "%s %s,(%s+)", instruction_name(inst), rt_lookup[inst->reg_1], rt_lookup[inst->reg_2]);
-        return;
+        snprintf(str, sizeof(str), "%s %s,(%s+)", instruction_name(inst), rt_lookup[inst->reg_1], rt_lookup[inst->reg_2]);
+        return str;
 
     case AM_R_RD:
-        sprintf(str, "%s %s,(%s-)", instruction_name(inst), rt_lookup[inst->reg_1], rt_lookup[inst->reg_2]);
-        return;
+        snprintf(str, sizeof(str), "%s %s,(%s-)", instruction_name(inst), rt_lookup[inst->reg_1], rt_lookup[inst->reg_2]);
+        return str;
 
     case AM_RI_R:
-        sprintf(str, "%s (%s+),%s", instruction_name(inst), rt_lookup[inst->reg_1], rt_lookup[inst->reg_2]);
-        return;
+        snprintf(str, sizeof(str), "%s (%s+),%s", instruction_name(inst), rt_lookup[inst->reg_1], rt_lookup[inst->reg_2]);
+        return str;
 
     case AM_RD_R:
-        sprintf(str, "%s (%s-),%s", instruction_name(inst), rt_lookup[inst->reg_1], rt_lookup[inst->reg_2]);
-        return;
+        snprintf(str, sizeof(str), "%s (%s-),%s", instruction_name(inst), rt_lookup[inst->reg_1], rt_lookup[inst->reg_2]);
+        return str;
 
     case AM_A8_R:
-        sprintf(str, "%s $%02X,%s", instruction_name(inst), bus_read(ctx->regs.pc - 1), rt_lookup[inst->reg_2]);
-        return;
+        snprintf(str, sizeof(str), "%s $%02X,%s", instruction_name(inst), bus_read(ctx->regs.pc - 1), rt_lookup[inst->reg_2]);
+        return str;
 
     case AM_HL_SPR:
-        sprintf(str, "%s (%s),SP+%d", instruction_name(inst), rt_lookup[inst->reg_1], ctx->fetched_data & 0xFF);
-        return;
+        snprintf(str, sizeof(str), "%s (%s),SP+%d", instruction_name(inst), rt_lookup[inst->reg_1], ctx->fetched_data & 0xFF);
+        return str;
 
     case AM_D8:
-        sprintf(str, "%s $%02X", instruction_name(inst), ctx->fetched_data);
-        return;
+        snprintf(str, sizeof(str), "%s $%02X", instruction_name(inst), ctx->fetched_data);
+        return str;
 
     case AM_D16:
-        sprintf(str, "%s $%04X", instruction_name(inst), ctx->fetched_data);
-        return;
+        snprintf(str, sizeof(str), "%s $%04X", instruction_name(inst), ctx->fetched_data);
+        return str;
 
     case AM_MR_D8:
-        sprintf(str, "%s (%s),$%02X", instruction_name(inst), rt_lookup[inst->reg_1], ctx->fetched_data & 0xFF);
-        return;
+        snprintf(str, sizeof(str), "%s (%s),$%02X", instruction_name(inst), rt_lookup[inst->reg_1], ctx->fetched_data & 0xFF);
+        return str;
 
     case AM_A16_R:
-        sprintf(str, "%s ($%04X),%s", instruction_name(inst), ctx->fetched_data, rt_lookup[inst->reg_2]);
-        return;
+        snprintf(str, sizeof(str), "%s ($%04X),%s", instruction_name(inst), ctx->fetched_data, rt_lookup[inst->reg_2]);
+        return str;
 
     default:
         fprintf(stderr, "INVALID ADDRESS MODE: %d\n", inst->mode);
-        NO_IMPL();
+        NO_IMPL(NULL);
     }
 }

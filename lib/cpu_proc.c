@@ -26,6 +26,7 @@ static void proc_none(cpu_context *ctx)
 
 static void proc_nop(cpu_context *ctx)
 {
+    (void)ctx;
 }
 
 static void proc_di(cpu_context *ctx)
@@ -348,18 +349,18 @@ reg_type rt_lookup[] = {
 
 reg_type decode_reg(u8 reg)
 {
-    if (reg > 0b111)
+    if (reg > 0x7)
         return RT_NONE;
     return rt_lookup[reg];
 }
 
 static void proc_cb(cpu_context *ctx)
 {
-    u8 op = ctx->fetched_data;             // op = 0x40 = 0b 01 000 000
-    reg_type reg = decode_reg(op & 0b111); // reg = RT_B
-    u8 bit = (op >> 3) & 0b111;            // bit = 0
-    u8 bit_op = (op >> 6) & 0b11;          // bit_op = 1
-    u8 reg_val = cpu_read_reg8(reg);       // reg_val = 0x00
+    u8 op = ctx->fetched_data;           // op = 0x40 = 0b 01 000 000
+    reg_type reg = decode_reg(op & 0x7); // reg = RT_B
+    u8 bit = (op >> 3) & 0x7;            // bit = 0
+    u8 bit_op = (op >> 6) & 0x3;         // bit_op = 1
+    u8 reg_val = cpu_read_reg8(reg);     // reg_val = 0x00
 
     emu_cycles(1);
 
@@ -543,6 +544,7 @@ static void proc_cpl(cpu_context *ctx)
 
 static void proc_scf(cpu_context *ctx)
 {
+    (void)ctx;
     cpu_set_flags(-1, 0, 0, 1);
 }
 

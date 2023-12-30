@@ -51,17 +51,17 @@ extern "C"
 
     void cpu_set_flags(u8 z, u8 n, u8 h, u8 c);
 
-    u8 cpu_get_ie_register();
+    u8 cpu_get_ie_register(void);
     void cpu_set_ie_register(u8 n);
 
-    u8 cpu_get_int_flags();
+    u8 cpu_get_int_flags(void);
     void cpu_set_int_flags(u8 value);
 
     IN_PROC inst_get_processor(in_type type);
 
     cpu_registers *cpu_get_registers(void);
 
-    void instr_to_str(cpu_context *ctx, char *str);
+    const char *instr_to_str(cpu_context *ctx);
 
 #ifdef __cplusplus
 }

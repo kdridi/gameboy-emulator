@@ -8,9 +8,9 @@ extern "C"
 #endif
 
     void dma_start(u8 start);
-    void dma_tick();
+    void dma_tick(void);
 
-    bool dma_transfering();
+    bool dma_transfering(void);
 
 #ifdef __cplusplus
 }

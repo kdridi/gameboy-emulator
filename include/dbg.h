@@ -7,8 +7,8 @@ extern "C"
 {
 #endif
 
-    void dbg_update();
-    void dbg_print();
+    void dbg_update(void);
+    void dbg_print(void);
 
 #ifdef __cplusplus
 }

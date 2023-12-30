@@ -9,8 +9,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(USE_ASAN OFF CACHE BOOL "Enable Address Sanitizer")
 
 if (USE_ASAN)
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
-    set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=address")
+    add_compile_options(-fsanitize=address -W -Wall -Wextra -Wpedantic -Werror)
+    add_link_options(-fsanitize=address)
 endif()
 
 # Enable testing

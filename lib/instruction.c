@@ -1,8 +1,10 @@
 #include <instruction.h>
 #include <cpu.h>
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-field-initializers"
+// clang-format off
 instruction instructions[0x100] = {
-    // clang-format off
     [0x00] = {IN_NOP                                                            },  // NOP
     [0x01] = {IN_LD     , AM_R_D16  , RT_BC                                     },  // LD BC, d16
     [0x02] = {IN_LD     , AM_MR_R   , RT_BC     , RT_A                          },  // LD (BC), A
@@ -274,9 +276,9 @@ instruction instructions[0x100] = {
     [0xFD] = {IN_NONE                                                           },  //
     [0xFE] = {IN_CP     , AM_R_D8   , RT_A                                      },  // CP d8
     [0xFF] = {IN_RST    , AM_NONE   , RT_NONE   , RT_NONE   , CT_NONE   , 0x38  },  // RST 38H
-
-    // clang-format on
 };
+// clang-format on
+#pragma clang diagnostic pop
 
 instruction *instruction_by_opcode(u8 opcode)
 {

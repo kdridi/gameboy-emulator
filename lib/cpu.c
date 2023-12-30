@@ -155,14 +155,13 @@ bool cpu_step(void)
 
 #if CPU_DEBUG == 1
         char flags[16];
-        sprintf(flags, "%c%c%c%c",
-                REGS.f & (1 << 7) ? 'Z' : '-',
-                REGS.f & (1 << 6) ? 'N' : '-',
-                REGS.f & (1 << 5) ? 'H' : '-',
-                REGS.f & (1 << 4) ? 'C' : '-');
+        snprintf(flags, sizeof(flags), "%c%c%c%c",
+                 REGS.f & (1 << 7) ? 'Z' : '-',
+                 REGS.f & (1 << 6) ? 'N' : '-',
+                 REGS.f & (1 << 5) ? 'H' : '-',
+                 REGS.f & (1 << 4) ? 'C' : '-');
 
-        char inst[16];
-        instr_to_str(&ctx, inst);
+        const char *inst = instr_to_str(&ctx);
 
         printf("%08llX - %04X: %-12s (%02X %02X %02X) A: %02X F: %s BC: %02X%02X DE: %02X%02X HL: %02X%02X\n",
                EMU->ticks,
@@ -228,7 +227,7 @@ void cpu_set_flags(u8 z, u8 n, u8 h, u8 c)
         BIT_SET(REGS.f, 4, c);
 }
 
-u8 cpu_get_ie_register()
+u8 cpu_get_ie_register(void)
 {
     return CPU.ie_register;
 }
@@ -243,7 +242,7 @@ cpu_registers *cpu_get_registers(void)
     return &CPU.regs;
 }
 
-u8 cpu_get_int_flags()
+u8 cpu_get_int_flags(void)
 {
     return CPU.int_flags;
 }

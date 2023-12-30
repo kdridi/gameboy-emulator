@@ -16,12 +16,12 @@ static ppu_context ctx = {0};
 #undef VIDEO_BUFFER
 #define VIDEO_BUFFER (PPU.video_buffer)
 
-ppu_context *ppu_get_context()
+ppu_context *ppu_get_context(void)
 {
     return &ctx;
 }
 
-void ppu_init()
+void ppu_init(void)
 {
     ctx.current_frame = 0;
     ctx.line_ticks = 0;
@@ -45,7 +45,7 @@ void ppu_init()
     memset(ctx.video_buffer, 0, YRES * XRES * sizeof(u32));
 }
 
-void ppu_tick()
+void ppu_tick(void)
 {
     ctx.line_ticks++;
 

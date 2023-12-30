@@ -3,10 +3,11 @@
 #include <lcd.h>
 #include <interrupts.h>
 #include <ppu_pipeline.h>
+#include <cart.h>
 
-bool window_visible();
+bool window_visible(void);
 
-static void increment_ly()
+static void increment_ly(void)
 {
     if (window_visible() && LCD->ly >= LCD->win_y && LCD->ly < LCD->win_y + YRES)
         PPU->window_line++;
@@ -23,7 +24,7 @@ static void increment_ly()
         LCDS_LYC_SET(0);
 }
 
-static void load_line_sprites()
+static void load_line_sprites(void)
 {
     int cur_y = LCD->ly;
 
@@ -86,7 +87,7 @@ static void load_line_sprites()
     }
 }
 
-void ppu_mode_oam()
+void ppu_mode_oam(void)
 {
     if (PPU->line_ticks >= 80)
     {
@@ -109,7 +110,7 @@ void ppu_mode_oam()
     }
 }
 
-void ppu_mode_xfer()
+void ppu_mode_xfer(void)
 {
     pipeline_process();
 
@@ -122,7 +123,7 @@ void ppu_mode_xfer()
     }
 }
 
-void ppu_mode_hblank()
+void ppu_mode_hblank(void)
 {
     static u32 target_frame_time = 1000 / 60;
     static u32 prev_frame_time = 0;
@@ -156,6 +157,9 @@ void ppu_mode_hblank()
                 frame_count = 0;
 
                 printf("FPS: %d\n", fps);
+
+                if (cart_need_save())
+                    cart_battery_save();
             }
 
             frame_count++;
@@ -170,7 +174,7 @@ void ppu_mode_hblank()
     }
 }
 
-void ppu_mode_vblank()
+void ppu_mode_vblank(void)
 {
     if (PPU->line_ticks >= TICKS_PER_LINE)
     {

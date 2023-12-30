@@ -3,7 +3,7 @@
 #include <lcd.h>
 #include <bus.h>
 
-bool window_visible()
+bool window_visible(void)
 {
     return LCDC_WIN_ENABLE &&
            LCD->win_x >= 0 &&
@@ -32,7 +32,7 @@ static void pixel_fifo_push(u32 value)
     PIXEL_FIFO->size += 1;
 }
 
-static u32 pixel_fifo_pop()
+static u32 pixel_fifo_pop(void)
 {
     assert(PIXEL_FIFO->size > 0);
 
@@ -84,7 +84,7 @@ static u32 fetch_sprite_pixels(int bit, u32 color, u8 bg_color)
     return color;
 }
 
-static bool pipeline_fifo_add()
+static bool pipeline_fifo_add(void)
 {
     if (PIXEL_FIFO->size > 8)
         return false;
@@ -106,7 +106,7 @@ static bool pipeline_fifo_add()
     return true;
 }
 
-static void pipeline_load_sprite_tile()
+static void pipeline_load_sprite_tile(void)
 {
     PPU_FOREACH_LINE_SPRITE(line)
     {
@@ -153,7 +153,7 @@ static void pipeline_load_sprite_data(u8 offset)
     }
 }
 
-void pipeline_load_window_tile()
+void pipeline_load_window_tile(void)
 {
     if (window_visible() == false)
         return;
@@ -175,7 +175,7 @@ void pipeline_load_window_tile()
     }
 }
 
-static void pipeline_fetch()
+static void pipeline_fetch(void)
 {
     switch (PFC->cur_fetch_state)
     {
@@ -244,7 +244,7 @@ static void pipeline_fetch()
     }
 }
 
-static void pipeline_push_pixel()
+static void pipeline_push_pixel(void)
 {
     if (PIXEL_FIFO->size > 8)
     {
@@ -260,7 +260,7 @@ static void pipeline_push_pixel()
     }
 }
 
-void pipeline_process()
+void pipeline_process(void)
 {
     PFC->map_y = LCD->ly + LCD->scroll_y;
     PFC->map_x = PFC->fetch_x + LCD->scroll_x;
@@ -275,7 +275,7 @@ void pipeline_process()
     pipeline_push_pixel();
 }
 
-void pipeline_fifo_reset()
+void pipeline_fifo_reset(void)
 {
     while (PIXEL_FIFO->size)
         pixel_fifo_pop();

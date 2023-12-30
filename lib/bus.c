@@ -87,47 +87,73 @@ void bus_write(u16 address, u8 value)
 {
     assert(address >= 0x0000);
     if (BETWEEN(address, 0x0000, 0x7FFF))
-        return cart_write(address, value);
+    {
+        cart_write(address, value);
+        return;
+    }
 
     assert(address >= ADDR_VRAM_START);
     if (BETWEEN(address, ADDR_VRAM_START, ADDR_VRAM_END))
-        return ppu_vram_write(address, value);
+    {
+        ppu_vram_write(address, value);
+        return;
+    }
 
     assert(address >= 0xA000);
     if (BETWEEN(address, 0xA000, 0xBFFF))
-        return cart_write(address, value);
+    {
+        cart_write(address, value);
+        return;
+    }
 
     assert(address >= 0xC000);
     if (BETWEEN(address, 0xC000, 0xDFFF))
-        return wram_write(address, value);
+    {
+        wram_write(address, value);
+        return;
+    }
 
     assert(address >= 0xE000);
     if (BETWEEN(address, 0xE000, 0xFDFF))
+    {
         return;
+    }
 
     assert(address >= ADDR_OAM_START);
     if (BETWEEN(address, ADDR_OAM_START, ADDR_OAM_END) && dma_transfering())
+    {
         return;
+    }
 
     assert(address >= ADDR_OAM_START);
     if (BETWEEN(address, ADDR_OAM_START, ADDR_OAM_END))
-        return ppu_oam_write(address, value);
+    {
+        ppu_oam_write(address, value);
+        return;
+    }
 
     assert(address >= 0xFEA0);
     if (BETWEEN(address, 0xFEA0, 0xFEFF))
-        // NO_IMPL();
+    {
         return;
+    }
 
     assert(address >= 0xFF00);
     if (BETWEEN(address, 0xFF00, 0xFF7F))
-        return io_write(address, value);
+    {
+        io_write(address, value);
+        return;
+    }
 
     assert(address >= 0xFF80);
     if (BETWEEN(address, 0xFF80, 0xFFFE))
-        return hram_write(address, value);
+    {
+        hram_write(address, value);
+        return;
+    }
 
     assert(address == 0xFFFF);
-    return cpu_set_ie_register(value);
+    cpu_set_ie_register(value);
 }
 
 u16 bus_read16(u16 address)

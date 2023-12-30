@@ -24,7 +24,7 @@ void delay(u32 ms)
     SDL_Delay(ms);
 }
 
-u32 get_ticks()
+u32 get_ticks(void)
 {
     return SDL_GetTicks();
 }
@@ -64,7 +64,7 @@ void display_tile(SDL_Surface *surface, u16 startLocation, u16 tileNum, int x, i
     }
 }
 
-void update_debug_window()
+void update_debug_window(void)
 {
     int status = 0;
     int xDraw = 0;
@@ -102,7 +102,7 @@ void update_debug_window()
     SDL_RenderPresent(sdlDebugRenderer);
 }
 
-void ui_update()
+void ui_update(void)
 {
     int status = 0;
 

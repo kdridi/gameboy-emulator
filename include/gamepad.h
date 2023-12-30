@@ -21,12 +21,12 @@ extern "C"
 {
 #endif
 
-    void gamepad_init();
+    void gamepad_init(void);
 
     void gamepad_write(u8 value);
-    u8 gamepad_read();
+    u8 gamepad_read(void);
 
-    gamepad_state *gamepad_get_state();
+    gamepad_state *gamepad_get_state(void);
 
 #if defined(__cplusplus)
 }

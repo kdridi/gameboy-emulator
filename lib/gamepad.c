@@ -20,14 +20,14 @@ void gamepad_write(u8 value)
     assert(!ctx.select_action || !ctx.select_direction);
 }
 
-gamepad_state *gamepad_get_state()
+gamepad_state *gamepad_get_state(void)
 {
     return &ctx.controller;
 }
 
-u8 gamepad_read()
+u8 gamepad_read(void)
 {
-    u8 output = 0b11001111;
+    u8 output = 0xCF; // 0b11001111
 
     BIT_SET(output, 4, !ctx.select_action);
     if (ctx.select_action)

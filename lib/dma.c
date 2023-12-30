@@ -20,7 +20,7 @@ void dma_start(u8 start)
     ctx.value = start;
 }
 
-void dma_tick()
+void dma_tick(void)
 {
     if (!ctx.active)
         return;
@@ -37,7 +37,7 @@ void dma_tick()
     ctx.active = ctx.byte < 0xA0; // 160 bytes
 }
 
-bool dma_transfering()
+bool dma_transfering(void)
 {
     return ctx.active;
 }
