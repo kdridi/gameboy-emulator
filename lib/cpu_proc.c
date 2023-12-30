@@ -21,7 +21,7 @@ static bool is_16bit(reg_type reg)
 static void proc_none(cpu_context *ctx)
 {
     printf("INVALID INSTRUCTION: 0x%02X\n", ctx->current_opcode);
-    abort();
+    assert(false);
 }
 
 static void proc_nop(cpu_context *ctx)

@@ -40,24 +40,12 @@ u8 lcd_read(u16 address)
     return p[offset];
 }
 
-static void update_palette(u8 palette_data, u8 pal)
+static void palette_update(u32 *palette, u8 palette_data)
 {
-    u32 *p_colors = ctx.bg_colors;
-
-    switch (pal)
-    {
-    case 1:
-        p_colors = ctx.sp1_colors;
-        break;
-    case 2:
-        p_colors = ctx.sp2_colors;
-        break;
-    }
-
-    p_colors[0] = colors_default[(palette_data >> 0) & 0b11];
-    p_colors[1] = colors_default[(palette_data >> 2) & 0b11];
-    p_colors[2] = colors_default[(palette_data >> 4) & 0b11];
-    p_colors[3] = colors_default[(palette_data >> 6) & 0b11];
+    palette[0] = colors_default[(palette_data >> 0) & 0b11];
+    palette[1] = colors_default[(palette_data >> 2) & 0b11];
+    palette[2] = colors_default[(palette_data >> 4) & 0b11];
+    palette[3] = colors_default[(palette_data >> 6) & 0b11];
 }
 
 void lcd_write(u16 address, u8 value)
@@ -70,9 +58,11 @@ void lcd_write(u16 address, u8 value)
         dma_start(value);
 
     if (address == 0xFF47)
-        update_palette(value, 0);
-    else if (address == 0xFF48)
-        update_palette(value & 0b11111100, 1);
-    else if (address == 0xFF49)
-        update_palette(value & 0b11111100, 2);
+        return palette_update(ctx.bg_colors, value);
+
+    if (address == 0xFF48)
+        return palette_update(ctx.sp1_colors, value & 0b11111100);
+
+    if (address == 0xFF49)
+        return palette_update(ctx.sp2_colors, value & 0b11111100);
 }

@@ -65,6 +65,7 @@ typedef uint64_t u64;
     } while (0)
 
 #define BETWEEN(a, b, c) ((a >= b) && (a <= c))
+#define NEARBY_LIMIT(a, b, range) (BETWEEN(a, b, ((b) + range) - 1))
 
 #define NO_IMPL(...)                                                             \
     {                                                                            \

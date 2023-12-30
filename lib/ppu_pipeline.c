@@ -3,90 +3,81 @@
 #include <lcd.h>
 #include <bus.h>
 
+bool window_visible()
+{
+    return LCDC_WIN_ENABLE &&
+           LCD->win_x >= 0 &&
+           LCD->win_x <= 166 &&
+           LCD->win_y >= 0 &&
+           LCD->win_y < YRES;
+}
+
 static void pixel_fifo_push(u32 value)
 {
     fifo_entry *next = malloc(sizeof(fifo_entry));
     next->next = NULL;
     next->value = value;
 
-    if (!PFC->pixel_fifo.head)
+    if (!PIXEL_FIFO->head)
     {
-        // first entry...
-        PFC->pixel_fifo.head = PFC->pixel_fifo.tail = next;
+        PIXEL_FIFO->head = next;
+        PIXEL_FIFO->tail = next;
     }
     else
     {
-        PFC->pixel_fifo.tail->next = next;
-        PFC->pixel_fifo.tail = next;
+        PIXEL_FIFO->tail->next = next;
+        PIXEL_FIFO->tail = next;
     }
 
-    PFC->pixel_fifo.size++;
+    PIXEL_FIFO->size += 1;
 }
 
 static u32 pixel_fifo_pop()
 {
-    if (PFC->pixel_fifo.size <= 0)
-    {
-        fprintf(stderr, "ERR IN PIXEL FIFO!\n");
-        exit(-8);
-    }
+    assert(PIXEL_FIFO->size > 0);
 
-    fifo_entry *popped = PFC->pixel_fifo.head;
-    PFC->pixel_fifo.head = popped->next;
-    PFC->pixel_fifo.size--;
+    fifo_entry *entry = PIXEL_FIFO->head;
+    PIXEL_FIFO->head = entry->next;
+    PIXEL_FIFO->tail = PIXEL_FIFO->head ? PIXEL_FIFO->tail : PIXEL_FIFO->head;
+    PIXEL_FIFO->size -= 1;
 
-    u32 val = popped->value;
-    free(popped);
+    u32 value = entry->value;
+    free(entry);
 
-    return val;
+    return value;
 }
 
 static u32 fetch_sprite_pixels(int bit, u32 color, u8 bg_color)
 {
     for (int i = 0; i < PPU->fetched_entry_count; i++)
     {
-        int sp_x = (PPU->fetched_entries[i].x - 8) + ((LCD->scroll_x % 8));
+        const oam_entry *const entry = PPU->fetched_entries[i];
+
+        int sp_x = entry->x - 8;
+        sp_x += LCD->scroll_x % 8;
 
         if (sp_x + 8 < PFC->fifo_x)
-        {
-            // past pixel point already...
             continue;
-        }
 
         int offset = PFC->fifo_x - sp_x;
 
-        if (offset < 0 || offset > 7)
-        {
-            // out of bounds..
+        if (!BETWEEN(offset, 0, 7))
             continue;
-        }
 
-        bit = (7 - offset);
+        bit = entry->f_x_flip ? offset : 7 - offset;
 
-        if (PPU->fetched_entries[i].f_x_flip)
-        {
-            bit = offset;
-        }
+        u8 hi = BIT(PFC->fetch_entry_data[(i * 2) + 0], bit) << 0;
+        u8 lo = BIT(PFC->fetch_entry_data[(i * 2) + 1], bit) << 1;
+        u8 index = hi | lo;
 
-        u8 hi = !!(PFC->fetch_entry_data[i * 2] & (1 << bit));
-        u8 lo = !!(PFC->fetch_entry_data[(i * 2) + 1] & (1 << bit)) << 1;
-
-        bool bg_priority = PPU->fetched_entries[i].f_bgp;
-
-        if (!(hi | lo))
-        {
-            // transparent
+        if (index == 0)
             continue;
-        }
 
-        if (!bg_priority || bg_color == 0)
+        if (entry->f_bgp == false || bg_color == 0)
         {
-            color = (PPU->fetched_entries[i].f_pn) ? LCD->sp2_colors[hi | lo] : LCD->sp1_colors[hi | lo];
-
-            if (hi | lo)
-            {
-                break;
-            }
+            u32 *palette_colors = entry->f_pn ? LCD->sp2_colors : LCD->sp1_colors;
+            color = palette_colors[index];
+            break;
         }
     }
 
@@ -95,36 +86,21 @@ static u32 fetch_sprite_pixels(int bit, u32 color, u8 bg_color)
 
 static bool pipeline_fifo_add()
 {
-    if (PFC->pixel_fifo.size > 8)
-    {
-        // fifo is full!
+    if (PIXEL_FIFO->size > 8)
         return false;
-    }
 
-    int x = PFC->fetch_x - (8 - (LCD->scroll_x % 8));
+    if (PFC->fetch_x < 8 - (LCD->scroll_x % 8))
+        return false;
 
-    for (int i = 0; i < 8; i++)
+    for (int bit = 7; bit >= 0; --bit)
     {
-        int bit = 7 - i;
-        u8 hi = !!(PFC->bgw_fetch_data[1] & (1 << bit));
-        u8 lo = !!(PFC->bgw_fetch_data[2] & (1 << bit)) << 1;
-        u32 color = LCD->bg_colors[hi | lo];
+        const u8 hi = BIT(PFC->bgw_fetch_data[1 + 0], bit) << 0;
+        const u8 lo = BIT(PFC->bgw_fetch_data[1 + 1], bit) << 1;
+        const u8 index = hi | lo;
+        const u32 color = LCD->bg_colors[LCDC_BGW_ENABLE ? index : 0];
 
-        if (!LCDC_BGW_ENABLE)
-        {
-            color = LCD->bg_colors[0];
-        }
-
-        if (LCDC_OBJ_ENABLE)
-        {
-            color = fetch_sprite_pixels(bit, color, hi | lo);
-        }
-
-        if (x >= 0)
-        {
-            pixel_fifo_push(color);
-            PFC->fifo_x++;
-        }
+        pixel_fifo_push(LCDC_OBJ_ENABLE ? fetch_sprite_pixels(bit, color, index) : color);
+        PFC->fifo_x++;
     }
 
     return true;
@@ -132,25 +108,22 @@ static bool pipeline_fifo_add()
 
 static void pipeline_load_sprite_tile()
 {
-    oam_line_entry *le = PPU->line_sprites;
-
-    while (le)
+    PPU_FOREACH_LINE_SPRITE(line)
     {
-        int sp_x = (le->entry.x - 8) + (LCD->scroll_x % 8);
-
-        if ((sp_x >= PFC->fetch_x && sp_x < PFC->fetch_x + 8) ||
-            ((sp_x + 8) >= PFC->fetch_x && (sp_x + 8) < PFC->fetch_x + 8))
-        {
-            // need to add entry
-            PPU->fetched_entries[PPU->fetched_entry_count++] = le->entry;
-        }
-
-        le = le->next;
-
-        if (!le || PPU->fetched_entry_count >= 3)
-        {
-            // max checking 3 sprites on pixels
+        if (PPU->fetched_entry_count >= 3)
             break;
+
+        int sp_x = line->entry->x - 8;
+        sp_x += LCD->scroll_x % 8;
+
+        bool nearby = false;
+        nearby |= NEARBY_LIMIT(sp_x + 0, PFC->fetch_x, 8);
+        nearby |= NEARBY_LIMIT(sp_x + 8, PFC->fetch_x, 8);
+
+        if (nearby)
+        {
+            PPU->fetched_entries[PPU->fetched_entry_count] = line->entry;
+            PPU->fetched_entry_count += 1;
         }
     }
 }
@@ -162,23 +135,47 @@ static void pipeline_load_sprite_data(u8 offset)
 
     for (int i = 0; i < PPU->fetched_entry_count; i++)
     {
-        u8 ty = ((cur_y + 16) - PPU->fetched_entries[i].y) * 2;
+        const oam_entry *const entry = PPU->fetched_entries[i];
 
-        if (PPU->fetched_entries[i].f_y_flip)
-        {
-            // flipped upside down...
-            ty = ((sprite_height * 2) - 2) - ty;
-        }
+        u8 tile_y = cur_y + 16;
+        tile_y -= entry->y;
+        tile_y *= 2;
 
-        u8 tile_index = PPU->fetched_entries[i].tile;
+        if (entry->f_y_flip)
+            tile_y = ((sprite_height * 2) - 2) - tile_y;
+
+        u8 tile_index = entry->tile;
 
         if (sprite_height == 16)
-        {
-            tile_index &= ~(1); // remove last bit...
-        }
+            tile_index &= ~(1);
 
-        PFC->fetch_entry_data[(i * 2) + offset] =
-            bus_read(0x8000 + (tile_index * 16) + ty + offset);
+        PFC->fetch_entry_data[(i * 2) + offset] = bus_read(ADDR_VRAM_START + (tile_index * 16) + tile_y + offset);
+    }
+}
+
+void pipeline_load_window_tile()
+{
+    if (window_visible() == false)
+        return;
+
+    u8 window_x = LCD->win_x;
+    u8 window_y = LCD->win_y;
+
+    if (NEARBY_LIMIT(PFC->fetch_x + 7, window_x, YRES + 14))
+    {
+        if (NEARBY_LIMIT(LCD->ly, window_y, XRES))
+        {
+            u8 tile_y = PPU->window_line;
+            tile_y >>= 3;
+
+            u8 tile_x = PFC->fetch_x + 7 - window_x;
+            tile_x >>= 3;
+
+            PFC->bgw_fetch_data[0] = bus_read(LCDC_WIN_MAP_AREA + tile_y * 32 + tile_x);
+
+            if (LCDC_BGW_DATA_AREA == 0x8800)
+                PFC->bgw_fetch_data[0] += 128;
+        }
     }
 }
 
@@ -192,20 +189,22 @@ static void pipeline_fetch()
 
         if (LCDC_BGW_ENABLE)
         {
-            PFC->bgw_fetch_data[0] = bus_read(LCDC_BG_MAP_AREA +
-                                              (PFC->map_x / 8) +
-                                              (((PFC->map_y / 8)) * 32));
+            u8 tile_y = PFC->map_y;
+            tile_y >>= 3;
+
+            u8 tile_x = PFC->map_x;
+            tile_x >>= 3;
+
+            PFC->bgw_fetch_data[0] = bus_read(LCDC_BG_MAP_AREA + tile_y * 32 + tile_x);
 
             if (LCDC_BGW_DATA_AREA == 0x8800)
-            {
-                PFC->bgw_fetch_data[0] += 128;
-            }
+                PFC->bgw_fetch_data[0] += 0x80;
+
+            pipeline_load_window_tile();
         }
 
         if (LCDC_OBJ_ENABLE && PPU->line_sprites)
-        {
             pipeline_load_sprite_tile();
-        }
 
         PFC->cur_fetch_state = FS_DATA0;
         PFC->fetch_x += 8;
@@ -214,24 +213,22 @@ static void pipeline_fetch()
 
     case FS_DATA0:
     {
-        PFC->bgw_fetch_data[1] = bus_read(LCDC_BGW_DATA_AREA +
-                                          (PFC->bgw_fetch_data[0] * 16) +
-                                          PFC->tile_y);
+        u8 data_index = PFC->bgw_fetch_data[0];
+        u8 data_y = PFC->tile_y + 0;
 
+        PFC->bgw_fetch_data[1] = bus_read(LCDC_BGW_DATA_AREA + data_index * 16 + data_y);
         pipeline_load_sprite_data(0);
-
         PFC->cur_fetch_state = FS_DATA1;
     }
     break;
 
     case FS_DATA1:
     {
-        PFC->bgw_fetch_data[2] = bus_read(LCDC_BGW_DATA_AREA +
-                                          (PFC->bgw_fetch_data[0] * 16) +
-                                          PFC->tile_y + 1);
+        u8 data_index = PFC->bgw_fetch_data[0];
+        u8 data_y = PFC->tile_y + 1;
 
+        PFC->bgw_fetch_data[2] = bus_read(LCDC_BGW_DATA_AREA + data_index * 16 + data_y);
         pipeline_load_sprite_data(1);
-
         PFC->cur_fetch_state = FS_IDLE;
     }
     break;
@@ -245,9 +242,7 @@ static void pipeline_fetch()
     case FS_PUSH:
     {
         if (pipeline_fifo_add())
-        {
             PFC->cur_fetch_state = FS_TILE;
-        }
     }
     break;
     }
@@ -255,15 +250,13 @@ static void pipeline_fetch()
 
 static void pipeline_push_pixel()
 {
-    if (PFC->pixel_fifo.size > 8)
+    if (PIXEL_FIFO->size > 8)
     {
         u32 pixel_data = pixel_fifo_pop();
 
         if (PFC->line_x >= (LCD->scroll_x % 8))
         {
-            PPU->video_buffer[PFC->pushed_x +
-                              (LCD->ly * XRES)] = pixel_data;
-
+            VIDEO_BUFFER_SET(PFC->pushed_x, LCD->ly, pixel_data);
             PFC->pushed_x++;
         }
 
@@ -273,24 +266,25 @@ static void pipeline_push_pixel()
 
 void pipeline_process()
 {
-    PFC->map_y = (LCD->ly + LCD->scroll_y);
-    PFC->map_x = (PFC->fetch_x + LCD->scroll_x);
-    PFC->tile_y = ((LCD->ly + LCD->scroll_y) % 8) * 2;
+    PFC->map_y = LCD->ly + LCD->scroll_y;
+    PFC->map_x = PFC->fetch_x + LCD->scroll_x;
 
-    if (!(PPU->line_ticks & 1))
-    {
+    PFC->tile_y = PFC->map_y;
+    PFC->tile_y %= 8;
+    PFC->tile_y *= 2;
+
+    if (!BIT(PPU->line_ticks, 0))
         pipeline_fetch();
-    }
 
     pipeline_push_pixel();
 }
 
 void pipeline_fifo_reset()
 {
-    while (PFC->pixel_fifo.size)
-    {
+    while (PIXEL_FIFO->size)
         pixel_fifo_pop();
-    }
 
-    PFC->pixel_fifo.head = 0;
+    assert(PIXEL_FIFO->size == 0);
+    assert(PIXEL_FIFO->head == NULL);
+    assert(PIXEL_FIFO->tail == NULL);
 }

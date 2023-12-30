@@ -34,6 +34,8 @@ add_library(gaboem_core STATIC
     lib/dma.c
     include/emu.h
     lib/emu.c
+    include/gamepad.h
+    lib/gamepad.c
     include/instruction.h
     lib/instruction.c
     include/interrupts.h

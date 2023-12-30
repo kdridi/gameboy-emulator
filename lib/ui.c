@@ -2,6 +2,7 @@
 #include <emu.h>
 #include <bus.h>
 #include <ppu.h>
+#include <gamepad.h>
 
 #include <stdio.h>
 
@@ -111,7 +112,7 @@ void ui_update()
 
     for (int y = 0; y < YRES; y++, rc.y += DEBUG_SCALE, rc.x = 0)
         for (int x = 0; x < XRES; x++, rc.x += DEBUG_SCALE)
-            SDL_FillRect(screen, &rc, VIDEO_BUFFER[y * XRES + x]);
+            SDL_FillRect(screen, &rc, VIDEO_BUFFER_GET(x, y));
 
     status = SDL_UpdateTexture(sdlTexture, NULL, screen->pixels, screen->pitch);
     assert(status == 0);
@@ -180,11 +181,34 @@ void ui_init(void)
     SDL_SetWindowPosition(sdlDebugWindow, x + SCREEN_WIDTH + 10, y);
 }
 
+void ui_on_key(bool down, u32 key_code)
+{
+    // clang-format off
+    switch (key_code)
+    {
+        case SDLK_z:      GAMEPAD->b      = down; break;
+        case SDLK_x:      GAMEPAD->a      = down; break;
+        case SDLK_RETURN: GAMEPAD->start  = down; break;
+        case SDLK_TAB:    GAMEPAD->select = down; break;
+        case SDLK_UP:     GAMEPAD->up     = down; break;
+        case SDLK_DOWN:   GAMEPAD->down   = down; break;
+        case SDLK_LEFT:   GAMEPAD->left   = down; break;
+        case SDLK_RIGHT:  GAMEPAD->right  = down; break;
+    }
+    // clang-format on
+}
+
 void ui_handle_events(void)
 {
     SDL_Event event;
     while (SDL_PollEvent(&event) > 0)
     {
+        if (event.type == SDL_KEYDOWN)
+            ui_on_key(true, event.key.keysym.sym);
+
+        if (event.type == SDL_KEYUP)
+            ui_on_key(false, event.key.keysym.sym);
+
         if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE)
             EMU->die = true;
 

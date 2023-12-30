@@ -37,7 +37,7 @@ typedef enum
 #define LCDC_OBJ_ENABLE     ((BIT(LCDC, 1) == 1) ? true : false)
 #define LCDC_OBJ_HEIGHT     ((BIT(LCDC, 2) == 1) ? 16 : 8)
 #define LCDC_BG_MAP_AREA    ((BIT(LCDC, 3) == 1) ? 0x9C00 : 0x9800)
-#define LCDC_BGW_DATA_AREA  ((BIT(LCDC, 4) == 1) ? 0x8000 : 0x8800)
+#define LCDC_BGW_DATA_AREA  ((BIT(LCDC, 4) == 1) ? ADDR_VRAM_START : 0x8800)
 #define LCDC_WIN_ENABLE     ((BIT(LCDC, 5) == 1) ? true : false)
 #define LCDC_WIN_MAP_AREA   ((BIT(LCDC, 6) == 1) ? 0x9C00 : 0x9800)
 #define LCDC_LCD_ENABLE     ((BIT(LCDC, 7) == 1) ? true : false)

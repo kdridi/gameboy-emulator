@@ -4,23 +4,23 @@
 #include <interrupts.h>
 #include <ppu_pipeline.h>
 
+bool window_visible();
+
 static void increment_ly()
 {
+    if (window_visible() && LCD->ly >= LCD->win_y && LCD->ly < LCD->win_y + YRES)
+        PPU->window_line++;
+
     LCD->ly++;
 
     if (LCD->ly == LCD->ly_compare)
     {
         LCDS_LYC_SET(1);
-
         if (LCDS_STAT_INT(SS_LYC))
-        {
             cpu_request_interrupt(IT_LCD_STAT);
-        }
     }
     else
-    {
         LCDS_LYC_SET(0);
-    }
 }
 
 static void load_line_sprites()
@@ -28,36 +28,31 @@ static void load_line_sprites()
     int cur_y = LCD->ly;
 
     u8 sprite_height = LCDC_OBJ_HEIGHT;
-    memset(PPU->line_entry_array, 0,
-           sizeof(PPU->line_entry_array));
+    memset(PPU->line_entry_array, 0, sizeof(PPU->line_entry_array));
 
     for (int i = 0; i < 40; i++)
     {
-        oam_entry e = PPU->oam_ram[i];
+        const oam_entry *const object_entry = PPU->oam_ram + i;
 
-        if (!e.x)
-        {
-            // x = 0 means not visible...
+        // x = 0 means not visible...
+        if (!object_entry->x)
             continue;
-        }
 
+        // max 10 sprites per line...
         if (PPU->line_sprite_count >= 10)
-        {
-            // max 10 sprites per line...
             break;
-        }
 
-        if (e.y <= cur_y + 16 && e.y + sprite_height > cur_y + 16)
+        if (object_entry->y <= cur_y + 16 && object_entry->y + sprite_height > cur_y + 16)
         {
             // this sprite is on the current line.
 
-            oam_line_entry *entry = &PPU->line_entry_array[PPU->line_sprite_count++];
+            oam_line_entry *entry = PPU->line_entry_array + PPU->line_sprite_count;
+            PPU->line_sprite_count += 1;
 
-            entry->entry = e;
+            entry->entry = object_entry;
             entry->next = NULL;
 
-            if (!PPU->line_sprites ||
-                PPU->line_sprites->entry.x > e.x)
+            if (PPU->line_sprites == NULL || PPU->line_sprites->entry->x > object_entry->x)
             {
                 entry->next = PPU->line_sprites;
                 PPU->line_sprites = entry;
@@ -71,7 +66,7 @@ static void load_line_sprites()
 
             while (le)
             {
-                if (le->entry.x > e.x)
+                if (le->entry->x > object_entry->x)
                 {
                     prev->next = entry;
                     entry->next = le;
@@ -121,39 +116,19 @@ void ppu_mode_xfer()
     if (PFC->pushed_x >= XRES)
     {
         pipeline_fifo_reset();
-
         LCDS_MODE_SET(MODE_HBLANK);
-
         if (LCDS_STAT_INT(SS_HBLANK))
-        {
             cpu_request_interrupt(IT_LCD_STAT);
-        }
     }
 }
-
-void ppu_mode_vblank()
-{
-    if (PPU->line_ticks >= TICKS_PER_LINE)
-    {
-        increment_ly();
-
-        if (LCD->ly >= LINES_PER_FRAME)
-        {
-            LCDS_MODE_SET(MODE_OAM);
-            LCD->ly = 0;
-        }
-
-        PPU->line_ticks = 0;
-    }
-}
-
-static u32 target_frame_time = 1000 / 60;
-static long prev_frame_time = 0;
-static long start_timer = 0;
-static long frame_count = 0;
 
 void ppu_mode_hblank()
 {
+    static u32 target_frame_time = 1000 / 60;
+    static long prev_frame_time = 0;
+    static long start_timer = 0;
+    static long frame_count = 0;
+
     if (PPU->line_ticks >= TICKS_PER_LINE)
     {
         increment_ly();
@@ -161,13 +136,9 @@ void ppu_mode_hblank()
         if (LCD->ly >= YRES)
         {
             LCDS_MODE_SET(MODE_VBLANK);
-
             cpu_request_interrupt(IT_VBLANK);
-
             if (LCDS_STAT_INT(SS_VBLANK))
-            {
                 cpu_request_interrupt(IT_LCD_STAT);
-            }
 
             PPU->current_frame++;
 
@@ -176,9 +147,7 @@ void ppu_mode_hblank()
             u32 frame_time = end - prev_frame_time;
 
             if (frame_time < target_frame_time)
-            {
                 delay((target_frame_time - frame_time));
-            }
 
             if (end - start_timer >= 1000)
             {
@@ -197,6 +166,21 @@ void ppu_mode_hblank()
             LCDS_MODE_SET(MODE_OAM);
         }
 
+        PPU->line_ticks = 0;
+    }
+}
+
+void ppu_mode_vblank()
+{
+    if (PPU->line_ticks >= TICKS_PER_LINE)
+    {
+        increment_ly();
+        if (LCD->ly >= LINES_PER_FRAME)
+        {
+            LCDS_MODE_SET(MODE_OAM);
+            LCD->ly = 0;
+            PPU->window_line = 0;
+        }
         PPU->line_ticks = 0;
     }
 }

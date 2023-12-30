@@ -3,9 +3,16 @@
 #include <common.h>
 
 #define PPU (ppu_get_context())
+#define PPU_FOREACH_LINE_SPRITE(__line) \
+    for (oam_line_entry *__line = PPU->line_sprites; __line != NULL; __line = __line->next)
+
 #define PFC (&((PPU)->pfc))
+
 #define PIXEL_FIFO (&((PFC)->pixel_fifo))
+
 #define VIDEO_BUFFER ((PPU)->video_buffer)
+#define VIDEO_BUFFER_GET(x, y) (VIDEO_BUFFER[(x) + ((y) * XRES)])
+#define VIDEO_BUFFER_SET(x, y, value) (VIDEO_BUFFER[(x) + ((y) * XRES)] = (value))
 
 typedef enum
 {
@@ -60,7 +67,7 @@ typedef struct
 
 typedef struct _oam_line_entry
 {
-    oam_entry entry;
+    const oam_entry *entry;
     struct _oam_line_entry *next;
 } oam_line_entry;
 
@@ -76,7 +83,8 @@ typedef struct
     oam_line_entry line_entry_array[10]; // memory to use for list.
 
     u8 fetched_entry_count;
-    oam_entry fetched_entries[3]; // entries fetched during pipeline.
+    const oam_entry *fetched_entries[3]; // entries fetched during pipeline.
+    u8 window_line;
 
     u32 current_frame;
     u32 line_ticks;

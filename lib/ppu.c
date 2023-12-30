@@ -36,6 +36,7 @@ void ppu_init()
 
     ctx.line_sprites = 0;
     ctx.fetched_entry_count = 0;
+    ctx.window_line = 0;
 
     lcd_init();
     LCDS_MODE_SET(MODE_OAM);
@@ -67,10 +68,8 @@ void ppu_tick()
 
 void ppu_oam_write(u16 address, u8 value)
 {
-    if (address >= 0xFE00)
-    {
-        address -= 0xFE00;
-    }
+    if (address >= ADDR_OAM_START)
+        address -= ADDR_OAM_START;
 
     u8 *p = (u8 *)ctx.oam_ram;
     p[address] = value;
@@ -78,10 +77,8 @@ void ppu_oam_write(u16 address, u8 value)
 
 u8 ppu_oam_read(u16 address)
 {
-    if (address >= 0xFE00)
-    {
-        address -= 0xFE00;
-    }
+    if (address >= ADDR_OAM_START)
+        address -= ADDR_OAM_START;
 
     u8 *p = (u8 *)ctx.oam_ram;
     return p[address];
@@ -89,10 +86,10 @@ u8 ppu_oam_read(u16 address)
 
 void ppu_vram_write(u16 address, u8 value)
 {
-    ctx.vram[address - 0x8000] = value;
+    ctx.vram[address - ADDR_VRAM_START] = value;
 }
 
 u8 ppu_vram_read(u16 address)
 {
-    return ctx.vram[address - 0x8000];
+    return ctx.vram[address - ADDR_VRAM_START];
 }
