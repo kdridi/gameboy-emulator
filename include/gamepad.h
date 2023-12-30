@@ -22,12 +22,11 @@ extern "C"
 #endif
 
     void gamepad_init();
-    bool gamepad_button_sel();
-    bool gamepad_dir_sel();
-    void gamepad_set_sel(u8 value);
+
+    void gamepad_write(u8 value);
+    u8 gamepad_read();
 
     gamepad_state *gamepad_get_state();
-    u8 gamepad_get_output();
 
 #if defined(__cplusplus)
 }

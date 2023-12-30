@@ -1,29 +1,23 @@
 #include <gamepad.h>
 #include <string.h>
 
+#undef GAMEPAD
+#define GAMEPAD ctx.controller
+
 typedef struct
 {
-    bool button_sel;
-    bool dir_sel;
+    bool select_action;
+    bool select_direction;
     gamepad_state controller;
 } gamepad_context;
 
 static gamepad_context ctx = {0};
 
-bool gamepad_button_sel()
+void gamepad_write(u8 value)
 {
-    return ctx.button_sel;
-}
-
-bool gamepad_dir_sel()
-{
-    return ctx.dir_sel;
-}
-
-void gamepad_set_sel(u8 value)
-{
-    ctx.button_sel = value & 0x20;
-    ctx.dir_sel = value & 0x10;
+    ctx.select_action = BIT(value, 5) == 0;
+    ctx.select_direction = BIT(value, 4) == 0;
+    assert(!ctx.select_action || !ctx.select_direction);
 }
 
 gamepad_state *gamepad_get_state()
@@ -31,32 +25,26 @@ gamepad_state *gamepad_get_state()
     return &ctx.controller;
 }
 
-u8 gamepad_get_output()
+u8 gamepad_read()
 {
-    u8 output = 0xCF;
+    u8 output = 0b11001111;
 
-    if (!gamepad_button_sel())
+    BIT_SET(output, 4, !ctx.select_action);
+    if (ctx.select_action)
     {
-        if (GAMEPAD->start)
-            output &= ~(1 << 3);
-        else if (GAMEPAD->select)
-            output &= ~(1 << 2);
-        else if (GAMEPAD->a)
-            output &= ~(1 << 0);
-        else if (GAMEPAD->b)
-            output &= ~(1 << 1);
+        BIT_SET(output, 0, !GAMEPAD.a);
+        BIT_SET(output, 1, !GAMEPAD.b);
+        BIT_SET(output, 2, !GAMEPAD.select);
+        BIT_SET(output, 3, !GAMEPAD.start);
     }
 
-    if (!gamepad_dir_sel())
+    BIT_SET(output, 5, !ctx.select_direction);
+    if (ctx.select_direction)
     {
-        if (GAMEPAD->left)
-            output &= ~(1 << 1);
-        else if (GAMEPAD->right)
-            output &= ~(1 << 0);
-        else if (GAMEPAD->up)
-            output &= ~(1 << 2);
-        else if (GAMEPAD->down)
-            output &= ~(1 << 3);
+        BIT_SET(output, 0, !GAMEPAD.right);
+        BIT_SET(output, 1, !GAMEPAD.left);
+        BIT_SET(output, 2, !GAMEPAD.up);
+        BIT_SET(output, 3, !GAMEPAD.down);
     }
 
     return output;
