@@ -12,7 +12,6 @@ typedef struct
     bool ram_banking;
 
     u8 *rom_bank_x;
-    u8 banking_mode;
 
     u8 rom_bank_value;
     u8 ram_bank_value;
@@ -324,8 +323,7 @@ void cart_write(u16 address, u8 value)
     if ((address & 0xE000) == 0x6000)
     {
         // banking mode select
-        ctx.banking_mode = value & 1;
-        ctx.ram_banking = ctx.banking_mode;
+        ctx.ram_banking = value & 1;
         if (ctx.ram_banking)
         {
             if (cart_need_save())
