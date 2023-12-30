@@ -125,9 +125,9 @@ void ppu_mode_xfer()
 void ppu_mode_hblank()
 {
     static u32 target_frame_time = 1000 / 60;
-    static long prev_frame_time = 0;
-    static long start_timer = 0;
-    static long frame_count = 0;
+    static u32 prev_frame_time = 0;
+    static u32 start_timer = 0;
+    static u32 frame_count = 0;
 
     if (PPU->line_ticks >= TICKS_PER_LINE)
     {
