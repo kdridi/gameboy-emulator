@@ -161,17 +161,13 @@ void pipeline_load_window_tile()
     u8 window_x = LCD->win_x;
     u8 window_y = LCD->win_y;
 
-    if (NEARBY_LIMIT(PFC->fetch_x + 7, window_x, YRES + 14))
+    const u8 at_x = PFC->fetch_x + 7 - window_x;
+    if (NEARBY_LIMIT(at_x, 0, YRES + 14))
     {
         if (NEARBY_LIMIT(LCD->ly, window_y, XRES))
         {
-            u8 tile_y = PPU->window_line;
-            tile_y >>= 3;
-
-            u8 tile_x = PFC->fetch_x + 7 - window_x;
-            tile_x >>= 3;
-
-            PFC->bgw_fetch_data[0] = bus_read(LCDC_WIN_MAP_AREA + tile_y * 32 + tile_x);
+            const u8 at_y = PPU->window_line;
+            PFC->bgw_fetch_data[0] = LCDC_WIN_MAP_AREA_READ_AT(at_x, at_y);
 
             if (LCDC_BGW_DATA_AREA == 0x8800)
                 PFC->bgw_fetch_data[0] += 128;
